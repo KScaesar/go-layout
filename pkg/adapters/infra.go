@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewMySql(conf *configs.MySql) (*gorm.DB, error) {
+func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
 	db, err := gorm.Open(mysql.Open(conf.DSN()), &gorm.Config{})
 	if err != nil {
 		return nil, err

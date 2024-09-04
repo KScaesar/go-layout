@@ -18,7 +18,7 @@ func NewHttpMux(debug bool, svc *Service) *gin.Engine {
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/users", api.RegisterUser(svc.UserService))
+	v1.POST("/users", api.RegisterUser(svc.Transaction, svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
 	return router

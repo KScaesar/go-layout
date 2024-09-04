@@ -8,6 +8,7 @@ import (
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/adapters/database"
 	"github.com/KScaesar/go-layout/pkg/app"
+	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -25,7 +26,7 @@ func NewInfra(conf *configs.Config) (*Infra, error) {
 			"Redis",
 		),
 
-		adapters.NewMySql,
+		adapters.NewMySqlGorm,
 		adapters.NewRedis,
 
 		wire.Struct(new(Infra), "*"),
@@ -43,6 +44,7 @@ func NewService(infra *Infra) *Service {
 			"MySql",
 			"Redis",
 		),
+		utility.NewGormTransaction,
 
 		database.NewUserMySQL,
 		database.NewUserRedis,
@@ -57,5 +59,6 @@ func NewService(infra *Infra) *Service {
 }
 
 type Service struct {
+	utility.Transaction
 	app.UserService
 }

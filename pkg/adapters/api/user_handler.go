@@ -1,18 +1,21 @@
 package api
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/KScaesar/go-layout/pkg/app"
+	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterUser(svc app.UserService) gin.HandlerFunc {
+func RegisterUser(tx utility.Transaction, svc app.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req app.RegisterUserRequest
 
-		ctx := c.Request.Context()
-		err := svc.RegisterUser(ctx, &req)
+		err := tx(c.Request.Context(), func(ctxTX context.Context) error {
+			return svc.RegisterUser(ctxTX, &req)
+		})
 		if err != nil {
 
 			return

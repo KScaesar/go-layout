@@ -11,6 +11,7 @@ import (
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/adapters/database"
 	"github.com/KScaesar/go-layout/pkg/app"
+	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -19,7 +20,7 @@ import (
 
 func NewInfra(conf *configs.Config) (*Infra, error) {
 	mySql := &conf.MySql
-	db, err := adapters.NewMySql(mySql)
+	db, err := adapters.NewMySqlGorm(mySql)
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +38,14 @@ func NewInfra(conf *configs.Config) (*Infra, error) {
 
 func NewService(infra *Infra) *Service {
 	db := infra.MySql
+	transaction := utility.NewGormTransaction(db)
 	userMySQL := database.NewUserMySQL(db)
 	client := infra.Redis
 	userRedis := database.NewUserRedis(client)
 	userRepository := database.NewUserRepository(userMySQL, userRedis)
 	userUseCase := app.NewUserUseCase(userRepository)
 	service := &Service{
+		Transaction: transaction,
 		UserService: userUseCase,
 	}
 	return service
@@ -56,5 +59,6 @@ type Infra struct {
 }
 
 type Service struct {
+	utility.Transaction
 	app.UserService
 }
