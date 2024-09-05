@@ -18,7 +18,7 @@ type ReadProxy[ViewModel any, Read func(key string) (ViewModel, error), Write fu
 	SingleFlight *Singleflight
 }
 
-// SafeReadPrimaryNode 併發時, 只會保護 Primary Node, 不會保護 Replica Node, 整體查詢速度較快
+// SafeReadPrimaryNode 併發時, 只會保護 Primary Node, 不會保護 Replica Node
 func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryNode(key string) (val ViewModel, err error) {
 	val, err = proxy.ReadReplica(key)
 	if err == nil {
@@ -27,7 +27,7 @@ func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryNode(key string) (
 	return proxy.SafeReadPrimaryAndReplicaNode(key)
 }
 
-// SafeReadPrimaryAndReplicaNode 併發時, 會保護 Primary Node and Replica Node, 整體查詢速度較慢
+// SafeReadPrimaryAndReplicaNode 併發時, 會保護 Primary Node and Replica Node
 func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryAndReplicaNode(key string) (val ViewModel, err error) {
 	value, err, _ := proxy.SingleFlight.Do(key, func() (any, error) {
 		return proxy.Read(key)
