@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+
+	"github.com/KScaesar/go-layout/pkg/utility/dataflow"
 )
 
 type UserRepository interface {
@@ -34,6 +36,7 @@ func NewUserUseCase(userRepo UserRepository) *UserUseCase {
 
 type UserUseCase struct {
 	userRepo UserRepository
+	bus      dataflow.MessageBus
 }
 
 func (uc *UserUseCase) RegisterUser(ctx context.Context, req *RegisterUserRequest) error {
@@ -42,10 +45,14 @@ func (uc *UserUseCase) RegisterUser(ctx context.Context, req *RegisterUserReques
 		return err
 	}
 
-	event := NewRegisteredUserEvent()
-	_ = event
+	err = uc.userRepo.CreteUser(ctx, user)
+	if err != nil {
+		return err
+	}
 
-	return uc.userRepo.CreteUser(ctx, user)
+	event := NewRegisteredUserEvent(user)
+	event.Ctx = ctx
+	return uc.bus.Send(event)
 }
 
 func (uc *UserUseCase) UpdateUserInfo(ctx context.Context, userId string, req *UpdateUserInfoRequest) error {
