@@ -29,12 +29,12 @@ func NonTransaction() Transaction {
 func NewGormTransaction(db *gorm.DB) Transaction {
 	return func(ctx context.Context, flow func(context.Context) error) error {
 		return db.Transaction(func(tx *gorm.DB) error {
-			return flow(CtxWithGromTransaction(ctx, db, tx))
+			return flow(CtxWithGormTransaction(ctx, db, tx))
 		})
 	}
 }
 
-func CtxWithGromTransaction(ctx context.Context, database *gorm.DB, tx *gorm.DB) context.Context {
+func CtxWithGormTransaction(ctx context.Context, database *gorm.DB, tx *gorm.DB) context.Context {
 	return context.WithValue(ctx, database, tx)
 }
 
