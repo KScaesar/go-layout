@@ -1,35 +1,39 @@
 package configs
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/KScaesar/go-layout/pkg/utility"
+	"gopkg.in/yaml.v3"
 )
 
-func NewConfig(path string) (*Config, error) {
-	return utility.NewConfigFromLocal[Config](json.Unmarshal, path)
+func MustLoadConfig(filePath string) *Config {
+	conf, err := utility.LoadLocalConfigFromMultiSource[Config](yaml.Unmarshal, filePath, "conf.yml")
+	if err != nil {
+		panic(err)
+	}
+	return conf
 }
 
 type Config struct {
-	Http  Server
-	MySql MySql
-	Redis Redis
-	O11Y  Observability
+	Http  Server        `yaml:"Http"`
+	MySql MySql         `yaml:"MySql"`
+	Redis Redis         `yaml:"Redis"`
+	O11Y  Observability `yaml:"O11Y"`
 }
 
 type Server struct {
-	Port  int
-	Debug bool
+	Port  string `yaml:"Port"`
+	Debug bool   `yaml:"Debug"`
 }
 
 type MySql struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
-	Database string
-	Debug    bool
+	User     string `yaml:"User"`
+	Password string `yaml:"Password"`
+	Host     string `yaml:"Host"`
+	Port     string `yaml:"Port"`
+	Database string `yaml:"Database"`
+	Debug    bool   `yaml:"Debug"`
 }
 
 func (conf *MySql) DSN() string {
@@ -43,10 +47,10 @@ func (conf *MySql) DSN() string {
 }
 
 type Redis struct {
-	User     string
-	Password string
-	Host     string
-	Port     string
+	User     string `yaml:"User"`
+	Password string `yaml:"Password"`
+	Host     string `yaml:"Host"`
+	Port     string `yaml:"Port"`
 }
 
 func (conf *Redis) Address() string {
@@ -57,5 +61,5 @@ func (conf *Redis) Address() string {
 }
 
 type Observability struct {
-	Enable bool
+	Enable bool `yaml:"Enable"`
 }

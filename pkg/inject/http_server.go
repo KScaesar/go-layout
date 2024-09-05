@@ -10,10 +10,10 @@ import (
 )
 
 func NewHttpMux(debug bool, svc *Service) *gin.Engine {
-	router := gin.New()
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	router := gin.New()
 	router.Use(gin.Recovery())
 
 	v1 := router.Group("/api/v1")
@@ -24,7 +24,7 @@ func NewHttpMux(debug bool, svc *Service) *gin.Engine {
 	return router
 }
 
-func NewHttpServer(port int, handler http.Handler) *http.Server {
+func NewHttpServer(port string, handler http.Handler) *http.Server {
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", port),
 		Handler:      handler,

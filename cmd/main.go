@@ -6,13 +6,7 @@ import (
 )
 
 func main() {
-	path := ""
-
-	conf, err := configs.NewConfig(path)
-	if err != nil {
-		panic(err)
-	}
-
+	conf := configs.MustLoadConfig("./configs/example.conf")
 	infra, err := inject.NewInfra(conf)
 	if err != nil {
 		panic(err)
