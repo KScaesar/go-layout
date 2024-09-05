@@ -25,10 +25,14 @@ func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
 
 func NewRedis(conf *configs.Redis) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     conf.Address(),
-		Username: conf.User,
-		Password: conf.Password,
-		DB:       0,
+		Addr:           conf.Address(),
+		Username:       conf.User,
+		Password:       conf.Password,
+		DB:             0,
+		PoolSize:       0,
+		MinIdleConns:   5,
+		MaxIdleConns:   10,
+		MaxActiveConns: 10,
 	})
 
 	err := client.Ping(context.Background()).Err()
