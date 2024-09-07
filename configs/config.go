@@ -25,6 +25,7 @@ type Config struct {
 	MySql     MySql         `yaml:"MySql"`
 	Redis     Redis         `yaml:"Redis"`
 	O11Y      Observability `yaml:"O11Y"`
+	Logger    Logger        `yaml:"Logger"`
 }
 
 func (c *Config) ServiceId_() string {
@@ -100,4 +101,9 @@ func (o *Observability) MetricPort_() string {
 		o.MetricPort = DefaultMetricPort
 	}
 	return o.MetricPort
+}
+
+type Logger struct {
+	AddSource  bool `yaml:"AddSource"`
+	JsonFormat bool `yaml:"JsonFormat"`
 }

@@ -1,9 +1,6 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg/inject"
 	"github.com/KScaesar/go-layout/pkg/utility"
@@ -11,9 +8,7 @@ import (
 
 func main() {
 	conf := configs.MustLoadConfig("./configs/example.conf")
-
-	opts := &slog.HandlerOptions{AddSource: true}
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, opts)))
+	utility.Init(conf.Logger.AddSource, conf.Logger.JsonFormat)
 
 	infra, err := inject.NewInfra(conf)
 	if err != nil {

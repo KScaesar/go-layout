@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var DefaultShutdown = NewShutdown(context.Background(), 0)
+var DefaultShutdown *Shutdown
 
 func SimpleShutdown(
 	waitSeconds int, component string, stopAction func() error,
