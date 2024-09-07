@@ -14,11 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// https://github.com/google/wire/tree/main/docs
-// https://github.com/google/wire/tree/main/_tutorial
-
-//go:generate wire gen
-
 func NewInfra(conf *configs.Config) (*Infra, error) {
 	panic(wire.Build(
 		wire.FieldsOf(new(*configs.Config),
@@ -38,7 +33,9 @@ type Infra struct {
 	Redis *redis.Client
 }
 
-func NewService(infra *Infra) *Service {
+//
+
+func NewService(name string, conf *configs.Business, infra *Infra) *Service {
 	panic(wire.Build(
 		wire.FieldsOf(new(*Infra),
 			"MySql",
@@ -59,6 +56,11 @@ func NewService(infra *Infra) *Service {
 }
 
 type Service struct {
+	Name string
 	utility.Transaction
 	app.UserService
 }
+
+// https://github.com/google/wire/tree/main/docs
+// https://github.com/google/wire/tree/main/_tutorial
+//go:generate wire gen
