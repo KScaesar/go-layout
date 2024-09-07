@@ -177,9 +177,9 @@ func (s *Shutdown) Serve() {
 		s.Logger.Error("shutdown timeout")
 	case <-finish:
 	}
+
 	duration := time.Since(start)
 	s.Logger.Info("shutdown finish", slog.String("duration", duration.String()))
-
 }
 
 func (s *Shutdown) terminate() {

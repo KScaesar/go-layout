@@ -27,7 +27,7 @@ func NewHttpMux(conf *configs.Config, svc *Service) *gin.Engine {
 	v1.POST("/users", api.RegisterUser(svc.Transaction, svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
-	router.GET("", utility.GinRoutes(router, conf.DebugKey_()))
+	router.GET("", utility.GinRoutes(router, ""))
 	return router
 }
 

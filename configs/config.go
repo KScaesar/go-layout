@@ -3,7 +3,6 @@ package configs
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"gopkg.in/yaml.v3"
@@ -20,7 +19,7 @@ func MustLoadConfig(filePath string) *Config {
 type Config struct {
 	Biz       Business      `yaml:"Business"`
 	ServiceId string        `yaml:"ServiceId"`
-	DebugKey  string        `yaml:"DebugKey"`
+	Hack      utility.Hack  `yaml:"Hack"`
 	Http      Http          `yaml:"Http"`
 	MySql     MySql         `yaml:"MySql"`
 	Redis     Redis         `yaml:"Redis"`
@@ -38,15 +37,6 @@ func (c *Config) ServiceId_() string {
 		c.ServiceId = DefaultServiceId
 	}
 	return c.ServiceId
-}
-
-func (c *Config) DebugKey_() string {
-	if c.DebugKey == "" {
-		const YYYYMMDD = "20060102"
-		DefaultDebugKey := time.Now().Format(YYYYMMDD)
-		c.DebugKey = DefaultDebugKey
-	}
-	return c.DebugKey
 }
 
 type Business struct {

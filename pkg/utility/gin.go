@@ -7,14 +7,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GinRoutes(router *gin.Engine, debugKey string) func(*gin.Context) {
+func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 	routes := make([]string, 0)
 	for _, route := range router.Routes() {
 		routes = append(routes, fmt.Sprintf("%-8v %v", route.Method, route.Path))
 	}
 	resp := strings.Join(routes, "\n")
 	return func(c *gin.Context) {
-		if c.Query("debug") == debugKey {
+		if hack.IsOk(c.Query("hack_api")) {
 			c.String(200, resp)
 		}
 	}
