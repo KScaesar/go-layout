@@ -25,20 +25,20 @@ func NonTransaction() Transaction {
 
 // NewGormTransaction 把 tx *gorm.DB 放在 context.Context 進行參數傳遞,
 // 如此一來, 在應用服務層就可以隱藏 tx 物件, 只依賴抽象的 repository,
-// 而且在資料層也可以透過 CtxGetGormTransaction 取得 *gorm.DB
+// 而且在資料層也可以透過 CtxGetGormTX 取得 *gorm.DB
 func NewGormTransaction(db *gorm.DB) Transaction {
 	return func(ctx context.Context, flow func(context.Context) error) error {
 		return db.Transaction(func(tx *gorm.DB) error {
-			return flow(CtxWithGormTransaction(ctx, db, tx))
+			return flow(CtxWithGormTX(ctx, db, tx))
 		})
 	}
 }
 
-func CtxWithGormTransaction(ctx context.Context, database *gorm.DB, tx *gorm.DB) context.Context {
+func CtxWithGormTX(ctx context.Context, database *gorm.DB, tx *gorm.DB) context.Context {
 	return context.WithValue(ctx, database, tx)
 }
 
-func CtxGetGormTransaction(ctx context.Context, database *gorm.DB) *gorm.DB {
+func CtxGetGormTX(ctx context.Context, database *gorm.DB) *gorm.DB {
 	tx, ok := ctx.Value(database).(*gorm.DB)
 	if !ok {
 		return database
