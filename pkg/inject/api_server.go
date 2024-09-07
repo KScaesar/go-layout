@@ -31,7 +31,7 @@ func NewHttpMux(conf *configs.Config, svc *Service) *gin.Engine {
 	return router
 }
 
-func ServeHttpServer(port string, handler http.Handler) {
+func ServeApiServer(port string, handler http.Handler) {
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      handler,
@@ -39,11 +39,11 @@ func ServeHttpServer(port string, handler http.Handler) {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	utility.DefaultShutdown.StopService("http", func() error {
-		return server.Shutdown(context.Background())
-	})
 	go func() {
 		err := server.ListenAndServe()
 		utility.DefaultShutdown.Notify(err)
 	}()
+	utility.DefaultShutdown.AddPriorityShutdownAction(0, "api", func() error {
+		return server.Shutdown(context.Background())
+	})
 }

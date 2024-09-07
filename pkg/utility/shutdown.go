@@ -13,6 +13,23 @@ import (
 
 var DefaultShutdown = NewShutdown(context.Background(), 0)
 
+func SimpleShutdown(
+	waitSeconds int, component string, stopAction func() error,
+) {
+	SimpleShutdownContext(context.Background(), waitSeconds, component, stopAction)
+}
+
+func SimpleShutdownContext(
+	countdown context.Context,
+	waitSeconds int,
+	component string,
+	stopAction func() error,
+) {
+	NewShutdown(countdown, waitSeconds).
+		AddShutdownAction(component, stopAction).
+		Serve()
+}
+
 // NewShutdown creates a new Shutdown instance that manages the graceful shutdown process.
 //
 // Parameters:
@@ -29,7 +46,8 @@ func NewShutdown(countdown context.Context, waitSeconds int) *Shutdown {
 	osSig := make(chan os.Signal, 2)
 	signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
 	ctx, cancel := context.WithCancelCause(countdown)
-	return &Shutdown{
+
+	shutdown := &Shutdown{
 		osSig:     osSig,
 		countdown: ctx,
 		notify:    cancel,
@@ -38,10 +56,13 @@ func NewShutdown(countdown context.Context, waitSeconds int) *Shutdown {
 		done:        make(chan struct{}),
 
 		Logger: slog.Default(),
-
-		names:       make([]string, 0, 4),
-		stopActions: make([]func() error, 0, 4),
 	}
+
+	for i := range shutdown.names {
+		shutdown.actions[i] = make(map[string]func() error)
+	}
+
+	return shutdown
 }
 
 type Shutdown struct {
@@ -55,13 +76,22 @@ type Shutdown struct {
 	Logger *slog.Logger
 	mu     sync.Mutex
 
-	svcQty      int
-	names       []string
-	stopActions []func() error
+	// The fields `names`, `actions` and `waitBlocked` use an array of size 3,
+	// representing three priority levels for shutdown process.
+	//
+	// priority 0 is the highest, and priority 2 is the lowest.
+	actionsQty int
+	names      [3][]string
+	actions    [3]map[string]func() error
 }
 
-// StopService This method registers a stop action to be stopped gracefully when a shutdown is triggered.
-func (s *Shutdown) StopService(name string, stopAction func() error) *Shutdown {
+// AddPriorityShutdownAction registers a shutdown process with a given priority.
+//
+// Parameters:
+//   - priority: Priority of the action (0 is the highest, and 2 is the lowest).
+//   - component: Name of the components.
+//   - stopAction: Function to execute during shutdown.
+func (s *Shutdown) AddPriorityShutdownAction(priority uint, component string, stopAction func() error) *Shutdown {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -71,29 +101,16 @@ func (s *Shutdown) StopService(name string, stopAction func() error) *Shutdown {
 	default:
 	}
 
-	fn := stopAction
-	if s.waitSeconds > 0 {
-		fn = func() error {
-			result := make(chan error, 1)
-			timeout := time.NewTimer(time.Duration(s.waitSeconds) * time.Second)
-
-			go func() {
-				result <- stopAction()
-			}()
-
-			select {
-			case <-timeout.C:
-				return errors.New("stop process timeout")
-			case err := <-result:
-				return err
-			}
-		}
-	}
-
-	s.svcQty++
-	s.names = append(s.names, name)
-	s.stopActions = append(s.stopActions, fn)
+	s.actionsQty++
+	s.names[priority] = append(s.names[priority], component)
+	s.actions[priority][component] = stopAction
 	return s
+}
+
+// AddShutdownAction This method registers a shutdown process to be stopped gracefully when a shutdown is triggered.
+func (s *Shutdown) AddShutdownAction(component string, stopAction func() error) *Shutdown {
+	const LowestPriority = len(s.names) - 1
+	return s.AddPriorityShutdownAction(uint(LowestPriority), component, stopAction)
 }
 
 // Notify is used to trigger an immediate shutdown in case of a critical error.
@@ -122,40 +139,77 @@ func (s *Shutdown) Serve() {
 
 	defer close(s.done)
 
-	// 有兩個觸發來源
-	// 1. os.Signal 藉由系統外部觸發
-	// 2. context countdown 藉由系統內部觸發
 	select {
 	case sig := <-s.osSig:
-		s.Logger.Info("recv os signal: %v", sig)
+		s.Logger.Info("recv os signal",
+			slog.String("trigger", "external"),
+			slog.Any("signal", sig),
+		)
 
 	case <-s.countdown.Done():
 		err := context.Cause(s.countdown)
 		if errors.Is(err, context.Canceled) {
-			s.Logger.Info("recv go context")
+			s.Logger.Info("recv go context",
+				slog.String("trigger", "internal"),
+			)
 		} else {
-			s.Logger.Error("recv go context: %v", err)
+			s.Logger.Error("recv go context",
+				slog.String("trigger", "internal"),
+				slog.Any("err", err),
+			)
 		}
 	}
 
-	s.Logger.Info("shutdown total service qty=%v", s.svcQty)
+	s.Logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
 	start := time.Now()
-	wg := sync.WaitGroup{}
-	for i := 0; i < s.svcQty; i++ {
-		number := i + 1
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			s.Logger.Info("number %v service %q shutdown start", number, s.names[number-1])
-			err := s.stopActions[number-1]()
-			if err != nil {
-				s.Logger.Error("number %v service %q shutdown fail: %v", number, s.names[number-1], err)
-				return
-			}
-			s.Logger.Info("number %v service %q shutdown finish", number, s.names[number-1])
-		}()
+
+	finish := make(chan struct{}, 1)
+	var timeout <-chan time.Time
+	if s.waitSeconds > 0 {
+		timeout = time.NewTimer(time.Duration(s.waitSeconds) * time.Second).C
 	}
-	wg.Wait()
+	go func() {
+		s.terminate()
+		finish <- struct{}{}
+	}()
+	select {
+	case <-timeout:
+		s.Logger.Error("shutdown timeout")
+	case <-finish:
+	}
 	duration := time.Since(start)
 	s.Logger.Info("shutdown finish", slog.String("duration", duration.String()))
+
+}
+
+func (s *Shutdown) terminate() {
+	seq := 0
+	wg := sync.WaitGroup{}
+	for i, components := range s.names {
+		priority := i
+		for j := range components {
+			seq += 1
+			wg.Add(1)
+			component := components[j]
+			go func(number int) {
+				defer wg.Done()
+
+				logger := s.Logger.With(
+					slog.String("component", component),
+					slog.Int("no.", number),
+					slog.Int("priority", priority),
+				)
+
+				logger.Info("shutdown start")
+				err := s.actions[priority][component]()
+				if err != nil {
+					logger.Error("shutdown fail", slog.Any("err", err))
+					return
+				}
+				logger.Info("shutdown finish")
+
+			}(seq)
+		}
+		wg.Wait()
+	}
 }

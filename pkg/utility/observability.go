@@ -29,13 +29,13 @@ func ServeObservability(port string) {
 	http.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{Addr: ":" + port, Handler: http.DefaultServeMux}
-	DefaultShutdown.StopService("o11y", func() error {
-		return server.Shutdown(context.Background())
-	})
 	go func() {
 		err := server.ListenAndServe()
 		DefaultShutdown.Notify(err)
 	}()
+	DefaultShutdown.AddPriorityShutdownAction(1, "o11y", func() error {
+		return server.Shutdown(context.Background())
+	})
 }
 
 func GinHttpObservability(svcName string) func(c *gin.Context) {

@@ -22,7 +22,7 @@ func main() {
 
 	svc := inject.NewService("CRM", &conf.Biz, infra)
 	mux := inject.NewHttpMux(conf, svc)
-	inject.ServeHttpServer(conf.Http.Port, mux)
+	inject.ServeApiServer(conf.Http.Port, mux)
 
 	if conf.O11Y.Enable {
 		utility.ServeObservability(conf.O11Y.MetricPort_())
