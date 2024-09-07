@@ -11,39 +11,57 @@ import (
 	"time"
 )
 
-// NewShutdown
+var DefaultShutdown = NewShutdown(context.Background(), 0)
+
+// NewShutdown creates a new Shutdown instance that manages the graceful shutdown process.
 //
 // Parameters:
+//
+//   - countdown:
+//     Specifies the context that determines when the graceful shutdown should be triggered.
+//     If the context is canceled, the shutdown process will start.
+//
 //   - waitSeconds:
-//     Specifies the number of seconds to wait before forcing a shutdown after the stop process is started.
+//     Specifies the maximum number of seconds to wait for the shutdown process to complete.
+//     If this time elapses, the system will forcefully terminate regardless of the shutdown process's state.
 //     A value of 0 means it will wait indefinitely.
-func NewShutdown(waitSeconds int) *Shutdown {
+func NewShutdown(countdown context.Context, waitSeconds int) *Shutdown {
 	osSig := make(chan os.Signal, 2)
 	signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
+	ctx, cancel := context.WithCancelCause(countdown)
 	return &Shutdown{
+		osSig:     osSig,
+		countdown: ctx,
+		notify:    cancel,
+
 		waitSeconds: waitSeconds,
 		done:        make(chan struct{}),
-		osSig:       osSig,
-		Logger:      slog.Default(),
+
+		Logger: slog.Default(),
+
 		names:       make([]string, 0, 4),
 		stopActions: make([]func() error, 0, 4),
 	}
 }
 
 type Shutdown struct {
+	osSig     chan os.Signal
+	countdown context.Context
+	notify    context.CancelCauseFunc
+
 	waitSeconds int
 	done        chan struct{}
-	notify      context.CancelCauseFunc
-	osSig       chan os.Signal
-	Logger      *slog.Logger
-	mu          sync.Mutex
 
-	stopQty     int
+	Logger *slog.Logger
+	mu     sync.Mutex
+
+	svcQty      int
 	names       []string
 	stopActions []func() error
 }
 
-func (s *Shutdown) StopService(name string, action func() error) *Shutdown {
+// StopService This method registers a stop action to be stopped gracefully when a shutdown is triggered.
+func (s *Shutdown) StopService(name string, stopAction func() error) *Shutdown {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -53,27 +71,26 @@ func (s *Shutdown) StopService(name string, action func() error) *Shutdown {
 	default:
 	}
 
-	fn := action
+	fn := stopAction
 	if s.waitSeconds > 0 {
 		fn = func() error {
 			result := make(chan error, 1)
 			timeout := time.NewTimer(time.Duration(s.waitSeconds) * time.Second)
 
 			go func() {
-				result <- action()
+				result <- stopAction()
 			}()
 
 			select {
 			case <-timeout.C:
-				timeout.Stop()
-				return errors.New("timeout")
+				return errors.New("stop process timeout")
 			case err := <-result:
 				return err
 			}
 		}
 	}
 
-	s.stopQty++
+	s.svcQty++
 	s.names = append(s.names, name)
 	s.stopActions = append(s.stopActions, fn)
 	return s
@@ -93,7 +110,7 @@ func (s *Shutdown) WaitChannel() <-chan struct{} {
 	return s.done
 }
 
-func (s *Shutdown) Serve(ctx context.Context) {
+func (s *Shutdown) Serve() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -105,17 +122,15 @@ func (s *Shutdown) Serve(ctx context.Context) {
 
 	defer close(s.done)
 
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	ctx, s.notify = context.WithCancelCause(ctx)
-
+	// 有兩個觸發來源
+	// 1. os.Signal 藉由系統外部觸發
+	// 2. context countdown 藉由系統內部觸發
 	select {
 	case sig := <-s.osSig:
 		s.Logger.Info("recv os signal: %v", sig)
 
-	case <-ctx.Done():
-		err := context.Cause(ctx)
+	case <-s.countdown.Done():
+		err := context.Cause(s.countdown)
 		if errors.Is(err, context.Canceled) {
 			s.Logger.Info("recv go context")
 		} else {
@@ -123,9 +138,10 @@ func (s *Shutdown) Serve(ctx context.Context) {
 		}
 	}
 
-	s.Logger.Info("shutdown total service qty=%v", s.stopQty)
+	s.Logger.Info("shutdown total service qty=%v", s.svcQty)
+	start := time.Now()
 	wg := sync.WaitGroup{}
-	for i := 0; i < s.stopQty; i++ {
+	for i := 0; i < s.svcQty; i++ {
 		number := i + 1
 		wg.Add(1)
 		go func() {
@@ -140,5 +156,6 @@ func (s *Shutdown) Serve(ctx context.Context) {
 		}()
 	}
 	wg.Wait()
-	s.Logger.Info("shutdown finish")
+	duration := time.Since(start)
+	s.Logger.Info("shutdown finish", slog.String("duration", duration.String()))
 }
