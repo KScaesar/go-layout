@@ -124,7 +124,10 @@ func GinGormTransaction(db *gorm.DB, skipPaths []string) gin.HandlerFunc {
 		c.Next()
 
 		if len(c.Errors) > 0 {
-			tx.Rollback()
+			err := tx.Rollback().Error
+			if err != nil {
+
+			}
 			return
 		}
 
