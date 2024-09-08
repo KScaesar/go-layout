@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
+	"reflect"
 )
 
 var ErrDecodeConf = errors.New("decode config")
@@ -25,6 +26,17 @@ var ErrDecodeConf = errors.New("decode config")
 // - FilePath: The explicit path to the configuration file. If provided, it overwrites the default file name.
 // - defaultFileName: The default name of the configuration file to use if FilePath is not provided.
 func LoadLocalConfigFromMultiSource[T any](decode Unmarshal, FilePath string, defaultFileName string) (conf *T, err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		var zero T
+		if reflect.DeepEqual(*conf, zero) {
+			err = errors.New("load zero value config")
+		}
+	}()
+
 	const (
 		byNormal int = iota + 1
 		byCurrentDir
@@ -73,7 +85,7 @@ func LoadLocalConfigFromMultiSource[T any](decode Unmarshal, FilePath string, de
 
 		conf, err = LoadLocalConfig[T](decode, path)
 		if err == nil {
-			log.Printf("load config from %v", path)
+			slog.Info("load config", slog.String("path", path))
 			return conf, nil
 		}
 

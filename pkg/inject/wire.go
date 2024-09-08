@@ -35,7 +35,7 @@ type Infra struct {
 
 //
 
-func NewService(name string, conf *configs.Business, infra *Infra) *Service {
+func NewService(name string, conf *configs.Config, infra *Infra) *Service {
 	panic(wire.Build(
 		wire.FieldsOf(new(*Infra),
 			"MySql",

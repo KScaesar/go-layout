@@ -36,7 +36,7 @@ func NewInfra(conf *configs.Config) (*Infra, error) {
 	return infra, nil
 }
 
-func NewService(name string, conf *configs.Business, infra *Infra) *Service {
+func NewService(name string, conf *configs.Config, infra *Infra) *Service {
 	db := infra.MySql
 	transaction := utility.NewGormTransaction(db)
 	easyTransaction := utility.NewGormEasyTransaction(db)

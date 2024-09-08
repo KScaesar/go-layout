@@ -18,18 +18,23 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 	}
 	router := gin.New()
 
-	router.Use(
-		gin.Recovery(),
-		utility.GinHttpObservability(svc.Name),
-		utility.GinGormTransaction(db, []string{}),
-	)
+	router.
+		Use(
+			gin.Recovery(),
+			utility.GinO11YTrace(conf.O11Y.EnableTrace),
+			utility.GinO11YMetric(svc.Name, conf.O11Y.EnableTrace),
+		).
+		Use(utility.GinO11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace)...).
+		Use(
+			utility.GinGormTransaction(db, []string{}),
+		)
 
 	v1 := router.Group("/api/v1")
 
 	v1.POST("/users", api.RegisterUser(svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
-	router.GET("", utility.GinRoutes(router, ""))
+	router.GET("", utility.GinRoutes(router, conf.Hack))
 	return router
 }
 
