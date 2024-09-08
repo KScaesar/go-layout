@@ -9,9 +9,10 @@ import (
 	"github.com/KScaesar/go-layout/pkg/adapters/api"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func NewHttpMux(conf *configs.Config, svc *Service) *gin.Engine {
+func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 	if !conf.Http.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -20,11 +21,12 @@ func NewHttpMux(conf *configs.Config, svc *Service) *gin.Engine {
 	router.Use(
 		gin.Recovery(),
 		utility.GinHttpObservability(svc.Name),
+		utility.GinGormTransaction(db, []string{}),
 	)
 
 	v1 := router.Group("/api/v1")
 
-	v1.POST("/users", api.RegisterUser(svc.Transaction, svc.UserService))
+	v1.POST("/users", api.RegisterUser(svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
 	router.GET("", utility.GinRoutes(router, ""))

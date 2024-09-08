@@ -16,7 +16,7 @@ func main() {
 	}
 
 	svc := inject.NewService("CRM", &conf.Biz, infra)
-	mux := inject.NewHttpMux(conf, svc)
+	mux := inject.NewHttpMux(conf, infra.MySql, svc)
 	inject.ServeApiServer(conf.Http.Port, mux)
 
 	if conf.O11Y.Enable {

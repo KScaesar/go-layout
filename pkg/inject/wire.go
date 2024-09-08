@@ -41,6 +41,7 @@ func NewService(name string, conf *configs.Business, infra *Infra) *Service {
 			"MySql",
 			"Redis",
 		),
+		utility.NewGormEasyTransaction,
 		utility.NewGormTransaction,
 
 		database.NewUserMySQL,
@@ -58,6 +59,7 @@ func NewService(name string, conf *configs.Business, infra *Infra) *Service {
 type Service struct {
 	Name string
 	utility.Transaction
+	utility.EasyTransaction
 	app.UserService
 }
 

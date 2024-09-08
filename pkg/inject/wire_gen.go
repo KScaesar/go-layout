@@ -39,15 +39,17 @@ func NewInfra(conf *configs.Config) (*Infra, error) {
 func NewService(name string, conf *configs.Business, infra *Infra) *Service {
 	db := infra.MySql
 	transaction := utility.NewGormTransaction(db)
+	easyTransaction := utility.NewGormEasyTransaction(db)
 	userMySQL := database.NewUserMySQL(db)
 	client := infra.Redis
 	userRedis := database.NewUserRedis(client)
 	userRepository := database.NewUserRepository(userMySQL, userRedis)
 	userUseCase := app.NewUserUseCase(userRepository)
 	service := &Service{
-		Name:        name,
-		Transaction: transaction,
-		UserService: userUseCase,
+		Name:            name,
+		Transaction:     transaction,
+		EasyTransaction: easyTransaction,
+		UserService:     userUseCase,
 	}
 	return service
 }
@@ -62,5 +64,6 @@ type Infra struct {
 type Service struct {
 	Name string
 	utility.Transaction
+	utility.EasyTransaction
 	app.UserService
 }
