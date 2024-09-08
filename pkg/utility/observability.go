@@ -58,27 +58,25 @@ func GinHttpObservability(svcName string) func(c *gin.Context) {
 		Subsystem: "http",
 		Name:      "request_duration_seconds",
 		Help:      "Histogram of response time for HTTP in seconds",
-		Buckets:   []float64{0.1, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30, 60}, // 100 ms ~ 60 s
+		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
 	}, []string{"code", "method", "handler"})
 
-	HttpRequestsInflight := prometheus.NewGauge(prometheus.GaugeOpts{
+	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: svcName,
 		Subsystem: "http",
 		Name:      "requests_in_flight",
 		Help:      "The number of inflight requests being handled at the same time",
-	})
+	}, []string{"method", "handler"})
 
 	return func(c *gin.Context) {
 		method := c.Request.Method
 		handler := c.Request.URL.Path
 
-		HttpRequestsInflight.Inc()
-		// HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
+		HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
 		start := time.Now()
 		c.Next()
 		duration := time.Since(start).Seconds()
-		// HttpRequestsInflight.WithLabelValues(method, handler).Add(-1)
-		HttpRequestsInflight.Desc()
+		HttpRequestsInflight.WithLabelValues(method, handler).Add(-1)
 
 		code := strconv.Itoa(c.Writer.Status())
 		HttpRequestsTotal.WithLabelValues(code, method, handler).Inc()
