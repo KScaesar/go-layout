@@ -11,7 +11,11 @@ import (
 	"time"
 )
 
-var DefaultShutdown = NewShutdown(context.Background(), 0)
+var defaultShutdown = NewShutdown(context.Background(), 0)
+
+func DefaultShutdown() *Shutdown {
+	return defaultShutdown
+}
 
 func EasyShutdown(
 	waitSeconds int, component string, stopAction func() error,
@@ -136,9 +140,10 @@ func (s *Shutdown) Serve() {
 
 	defer close(s.done)
 
+	logger := DefaultLogger()
 	select {
 	case sig := <-s.osSig:
-		slog.Default().Info("recv os signal",
+		logger.Info("recv os signal",
 			slog.String("trigger", "external"),
 			slog.Any("signal", sig),
 		)
@@ -146,18 +151,18 @@ func (s *Shutdown) Serve() {
 	case <-s.countdown.Done():
 		err := context.Cause(s.countdown)
 		if errors.Is(err, context.Canceled) {
-			slog.Default().Info("recv go context",
+			logger.Info("recv go context",
 				slog.String("trigger", "internal"),
 			)
 		} else {
-			slog.Default().Error("recv go context",
+			logger.Error("recv go context",
 				slog.String("trigger", "internal"),
 				slog.Any("err", err),
 			)
 		}
 	}
 
-	slog.Default().Info("shutdown start", slog.Int("qty", s.actionsQty))
+	logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
 	start := time.Now()
 
 	finish := make(chan struct{}, 1)
@@ -171,12 +176,12 @@ func (s *Shutdown) Serve() {
 	}()
 	select {
 	case <-timeout:
-		slog.Default().Error("shutdown timeout")
+		logger.Error("shutdown timeout")
 	case <-finish:
 	}
 
 	duration := time.Since(start)
-	slog.Default().Info("shutdown finish", slog.String("duration", duration.String()))
+	logger.Info("shutdown finish", slog.String("duration", duration.String()))
 }
 
 func (s *Shutdown) terminate() {
@@ -191,7 +196,7 @@ func (s *Shutdown) terminate() {
 			go func(number int) {
 				defer wg.Done()
 
-				logger := slog.Default().With(
+				logger := DefaultLogger().With(
 					slog.Int("no.", number),
 					slog.Int("priority", priority),
 					slog.String("component", component),

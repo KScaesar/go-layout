@@ -3,6 +3,7 @@ package utility
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"strconv"
@@ -69,7 +70,7 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 		)
 		otel.SetTracerProvider(provider)
 
-		DefaultShutdown.AddPriorityShutdownAction(1, "trace", func() error {
+		DefaultShutdown().AddPriorityShutdownAction(1, "trace", func() error {
 			return provider.Shutdown(ctx)
 		})
 	}
@@ -92,10 +93,11 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 
 	server := &http.Server{Addr: ":" + conf.MetricPort(), Handler: http.DefaultServeMux}
 	go func() {
+		DefaultLogger().Info("metric start", slog.String("url", "http://localhost:"+conf.MetricPort()+"/metrics"))
 		err := server.ListenAndServe()
-		DefaultShutdown.Notify(err)
+		DefaultShutdown().Notify(err)
 	}()
-	DefaultShutdown.AddPriorityShutdownAction(1, "metric_pprof", func() error {
+	DefaultShutdown().AddPriorityShutdownAction(1, "metric", func() error {
 		return server.Shutdown(ctx)
 	})
 

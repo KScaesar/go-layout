@@ -12,7 +12,7 @@ import (
 func MustLoadConfig(filePath string) *Config {
 	conf, err := utility.LoadLocalConfigFromMultiSource[Config](yaml.Unmarshal, filePath, "local.yml")
 	if err != nil {
-		slog.Default().Error("load config fail", slog.Any("err", err))
+		utility.DefaultLogger().Error("load config fail", slog.Any("err", err))
 		os.Exit(1)
 	}
 	return conf

@@ -2,7 +2,9 @@ package utility
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,7 +17,9 @@ func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 	resp := strings.Join(routes, "\n")
 
 	return func(c *gin.Context) {
-		CtxGetLogger(c.Request.Context()).Info("good")
+		CtxGetLogger(c.Request.Context()).Info("good",
+			slog.Time("now", time.Now()),
+		)
 
 		if hack.IsOk(c.Query("hack_api")) {
 			c.String(200, resp)

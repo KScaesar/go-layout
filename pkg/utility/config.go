@@ -85,13 +85,15 @@ func LoadLocalConfigFromMultiSource[T any](decode Unmarshal, FilePath string, de
 
 		conf, err = LoadLocalConfig[T](decode, path)
 		if err == nil {
-			slog.Info("load config", slog.String("path", path))
+			DefaultLogger().Info("load config", slog.String("path", path))
 			return conf, nil
 		}
 
 		if errors.Is(err, ErrDecodeConf) {
 			return nil, err
 		}
+
+		DefaultLogger().Warn("try load config", slog.String("path", path))
 	}
 	return nil, err
 }

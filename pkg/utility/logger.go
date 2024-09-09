@@ -1,15 +1,38 @@
 package utility
 
 import (
+	"bytes"
+	"io"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 	sloggin "github.com/samber/slog-gin"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 )
+
+//
+
+type logKey struct{}
+
+func CtxWithLogger(ctx context.Context, v *slog.Logger) context.Context {
+	return context.WithValue(ctx, logKey{}, v)
+}
+
+func CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
+	v, ok := ctx.Value(logKey{}).(*slog.Logger)
+	if !ok {
+		return DefaultLogger().Logger
+	}
+	return v
+}
+
+//
 
 type LoggerConfig struct {
 	AddSource  bool `yaml:"AddSource"`
@@ -26,90 +49,117 @@ func (l LoggerConfig) Level() slog.Level {
 	return slog.Level(l.Level_)
 }
 
-//
+func NewWrapLogger(w io.Writer, conf *LoggerConfig) *WrapLogger {
+	lvl := &slog.LevelVar{}
+	lvl.Set(conf.Level())
 
-var loggerLevel = &slog.LevelVar{}
-
-func SetLoggerLevel(lvl slog.Level) {
-	loggerLevel.Set(lvl)
-	slog.SetLogLoggerLevel(lvl)
-}
-
-func GetLoggerLevel() slog.Leveler {
-	return loggerLevel
-}
-
-//
-
-func NewLoggerHandlerOptions(source bool) *slog.HandlerOptions {
-	return &slog.HandlerOptions{
-		AddSource: source,
-		Level:     loggerLevel,
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key != slog.TimeKey {
+	pool := NewPool(func() *bytes.Buffer {
+		return &bytes.Buffer{}
+	})
+	stdReplace := func(groups []string, a slog.Attr) slog.Attr {
+		if !conf.JsonFormat && a.Key == slog.SourceKey {
+			src, ok := a.Value.Any().(*slog.Source)
+			if !ok {
 				return a
 			}
+
+			buf := pool.Get()
+			defer func() {
+				buf.Reset()
+				pool.Put(buf)
+			}()
+
+			buf.WriteString(src.File)
+			buf.WriteByte(':')
+			buf.WriteString(strconv.Itoa(src.Line))
+			a.Value = slog.StringValue(buf.String())
+		}
+		if a.Value.Kind() == slog.KindTime {
 			a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
-			return a
-		},
+		}
+		if a.Value.Kind() == slog.KindDuration {
+			a.Value = slog.StringValue(a.Value.Duration().String())
+		}
+		return a
 	}
+
+	var handler slog.Handler
+	if conf.JsonFormat {
+		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{
+			AddSource:   conf.AddSource,
+			Level:       lvl,
+			ReplaceAttr: stdReplace,
+		})
+	} else {
+		noColor := true
+		fd, ok := w.(interface{ Fd() uintptr })
+		if ok {
+			noColor = !isatty.IsTerminal(fd.Fd())
+		}
+		handler = tint.NewHandler(w, &tint.Options{
+			AddSource:   conf.AddSource,
+			Level:       lvl,
+			ReplaceAttr: stdReplace,
+			TimeFormat:  time.RFC3339,
+			NoColor:     noColor,
+		})
+	}
+
+	return &WrapLogger{
+		lvl:    lvl,
+		Logger: slog.New(handler),
+	}
+}
+
+type WrapLogger struct {
+	lvl *slog.LevelVar
+	*slog.Logger
+}
+
+func (l *WrapLogger) SetLevel(lvl slog.Level) {
+	l.lvl.Set(lvl)
+}
+
+func (l WrapLogger) SetStdDefaultLogger() {
+	slog.SetDefault(l.Logger)
+}
+
+func (l WrapLogger) SetStdDefaultLevel() {
+	slog.SetLogLoggerLevel(l.lvl.Level())
 }
 
 //
 
-func InitLogger(svc string, conf *LoggerConfig) {
-	SetLoggerLevel(conf.Level())
-	opts := NewLoggerHandlerOptions(conf.AddSource)
-
-	var logger *slog.Logger
-	if conf.JsonFormat {
-		logger = slog.New(slog.NewJSONHandler(os.Stdout, opts))
-	} else {
-		logger = slog.New(slog.NewTextHandler(os.Stdout, opts))
-	}
-
-	if svc != "" {
-		logger = logger.With(slog.String("svc", svc))
-	}
-
-	// slog.SetDefault(otelslog.NewLogger("app_or_package_name"))
-	slog.SetDefault(logger)
-}
-
-func LoggerWhenDebug() {
-	debug := -4
+func LoggerWhenDebug() *WrapLogger {
+	const debug = -4
 	conf := &LoggerConfig{
 		AddSource:  true,
 		JsonFormat: false,
 		Level_:     debug,
 	}
-	InitLogger("", conf)
+	logger := NewWrapLogger(os.Stdout, conf)
+	return logger
 }
 
-func LoggerWhenGoTest() {
-	warn := 4
+func LoggerWhenGoTest() *WrapLogger {
+	const warn = 4
 	conf := &LoggerConfig{
 		AddSource:  true,
 		JsonFormat: false,
 		Level_:     warn,
 	}
-	InitLogger("", conf)
-}
-
-//
-
-type logKey struct{}
-
-func CtxWithLogger(ctx context.Context, v *slog.Logger) context.Context {
-	return context.WithValue(ctx, logKey{}, v)
-}
-
-func CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
-	logger, ok := ctx.Value(logKey{}).(*slog.Logger)
-	if !ok {
-		return slog.Default()
-	}
+	logger := NewWrapLogger(os.Stdout, conf)
 	return logger
+}
+
+var defaultLogger = LoggerWhenGoTest()
+
+func DefaultLogger() *WrapLogger {
+	return defaultLogger
+}
+
+func SetDefaultLogger(logger *WrapLogger) {
+	defaultLogger = logger
 }
 
 //
@@ -137,7 +187,7 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 	sloggin.RequestIDKey = "req_id"
 
 	return []gin.HandlerFunc{
-		sloggin.NewWithConfig(slog.Default(), config),
+		sloggin.NewWithConfig(DefaultLogger().Logger, config),
 
 		func(c *gin.Context) {
 			ctx := c.Request.Context()
@@ -147,7 +197,7 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 				slog.String("method", c.Request.Method),
 				slog.String("path", c.Request.URL.Path),
 			}
-			logger := slog.Default().With(
+			logger := DefaultLogger().With(
 				slog.Any("request", slog.GroupValue(requestAttributes...)),
 				slog.String(sloggin.RequestIDKey, reqId),
 			)

@@ -2,6 +2,7 @@ package inject
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -46,11 +47,14 @@ func ServeApiServer(port string, handler http.Handler) {
 		WriteTimeout: 30 * time.Second,
 	}
 
+	protocol := func() string { return "http" }
+
 	go func() {
+		utility.DefaultLogger().Info("api start", slog.String("url", protocol()+"://localhost:"+port))
 		err := server.ListenAndServe()
-		utility.DefaultShutdown.Notify(err)
+		utility.DefaultShutdown().Notify(err)
 	}()
-	utility.DefaultShutdown.AddPriorityShutdownAction(0, "api", func() error {
+	utility.DefaultShutdown().AddPriorityShutdownAction(0, "api", func() error {
 		return server.Shutdown(context.Background())
 	})
 }
