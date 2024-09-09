@@ -18,9 +18,10 @@ type Singleflight struct {
 //
 // https://pkg.go.dev/golang.org/x/sync/singleflight#Group.Do
 func (group *Singleflight) Do(key string, fn func() (val any, err error)) (val any, err error, shared bool) {
-	done := make(chan struct{})
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	wait := func() (any, error) {
-		<-done
+		wg.Wait()
 		return val, err
 	}
 
@@ -30,7 +31,7 @@ func (group *Singleflight) Do(key string, fn func() (val any, err error)) (val a
 		return val, err, true
 	}
 
-	defer close(done)
+	defer wg.Done()
 
 	val, err = fn()
 	return val, err, false

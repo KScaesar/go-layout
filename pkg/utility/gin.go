@@ -21,7 +21,7 @@ func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 			slog.Time("now", time.Now()),
 		)
 
-		if hack.IsOk(c.Query("hack_api")) {
+		if hack.Challenge(c.Query("hack_api")) {
 			c.String(200, resp)
 			return
 		}

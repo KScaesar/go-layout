@@ -30,6 +30,8 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 			utility.GinGormTransaction(db, []string{}),
 		)
 
+	router.GET("/logger/level", utility.GinSetLoggerLevel(conf.Hack))
+
 	v1 := router.Group("/api/v1")
 
 	v1.POST("/users", api.RegisterUser(svc.UserService))

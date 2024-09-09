@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -116,6 +117,10 @@ type WrapLogger struct {
 	*slog.Logger
 }
 
+func (l WrapLogger) Level() slog.Level {
+	return l.lvl.Level()
+}
+
 func (l *WrapLogger) SetLevel(lvl slog.Level) {
 	l.lvl.Set(lvl)
 }
@@ -216,5 +221,26 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 			c.Request = c.Request.WithContext(CtxWithLogger(ctx, logger))
 			c.Next()
 		},
+	}
+}
+
+func GinSetLoggerLevel(hack Hack) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if hack.Challenge(c.Query("hack_level")) {
+			logger := DefaultLogger()
+
+			switch c.Query("level") {
+			case "info":
+				logger.SetLevel(slog.LevelInfo)
+				logger.SetStdDefaultLevel()
+
+			case "debug":
+				logger.SetLevel(slog.LevelDebug)
+				logger.SetStdDefaultLevel()
+			}
+
+			c.JSON(http.StatusOK, gin.H{"level": logger.Level()})
+			return
+		}
 	}
 }

@@ -88,7 +88,7 @@ func (g *gormTX) Rollback(ctxTX context.Context) error {
 // GinGormTransaction
 //
 // 若 skipPaths 長度為 0，表示所有 path 都會使用 tx
-// 若 skipPaths 長度不為 0，表示 skipPaths 中的路徑將不會啟動 ix
+// 若 skipPaths 長度不為 0，表示 skipPaths 中的路徑將不會啟動 tx
 func GinGormTransaction(db *gorm.DB, skipPaths []string) gin.HandlerFunc {
 	skipMethods := map[string]bool{
 		http.MethodHead:    true,
