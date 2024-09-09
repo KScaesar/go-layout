@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/KScaesar/go-layout/configs"
+	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters/api"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,7 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 		Use(
 			gin.Recovery(),
 			utility.GinO11YTrace(conf.O11Y.EnableTrace),
-			utility.GinO11YMetric(svc.Name, conf.O11Y.EnableTrace),
+			utility.GinO11YMetric(pkg.Service.Name, conf.O11Y.EnableTrace),
 		).
 		Use(utility.GinO11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace)...).
 		Use(

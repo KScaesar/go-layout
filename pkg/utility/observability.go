@@ -70,7 +70,7 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 		)
 		otel.SetTracerProvider(provider)
 
-		DefaultShutdown().AddPriorityShutdownAction(1, "trace", func() error {
+		DefaultShutdown().AddPriorityShutdownAction(2, "trace", func() error {
 			return provider.Shutdown(ctx)
 		})
 	}
@@ -97,7 +97,7 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 		err := server.ListenAndServe()
 		DefaultShutdown().Notify(err)
 	}()
-	DefaultShutdown().AddPriorityShutdownAction(1, "metric", func() error {
+	DefaultShutdown().AddPriorityShutdownAction(2, "metric", func() error {
 		return server.Shutdown(ctx)
 	})
 

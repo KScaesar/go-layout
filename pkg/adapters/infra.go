@@ -22,7 +22,7 @@ func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
 		db = db.Debug()
 	}
 
-	utility.DefaultShutdown().AddPriorityShutdownAction(1, "mysql", func() error {
+	utility.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", func() error {
 		stdDB, err := db.DB()
 		if err != nil {
 			return err
@@ -49,7 +49,7 @@ func NewRedis(conf *configs.Redis) (*redis.Client, error) {
 		return nil, err
 	}
 
-	utility.DefaultShutdown().AddPriorityShutdownAction(1, "redis", client.Close)
+	utility.DefaultShutdown().AddPriorityShutdownAction(2, "redis", client.Close)
 	return client, nil
 }
 

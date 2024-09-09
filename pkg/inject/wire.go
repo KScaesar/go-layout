@@ -35,7 +35,7 @@ type Infra struct {
 
 //
 
-func NewService(name string, conf *configs.Config, infra *Infra) *Service {
+func NewService(conf *configs.Config, infra *Infra) *Service {
 	panic(wire.Build(
 		wire.FieldsOf(new(*Infra),
 			"MySql",
@@ -57,7 +57,6 @@ func NewService(name string, conf *configs.Config, infra *Infra) *Service {
 }
 
 type Service struct {
-	Name string
 	utility.Transaction
 	utility.EasyTransaction
 	app.UserService
