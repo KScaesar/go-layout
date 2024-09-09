@@ -7,14 +7,15 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
 
-var defaultShutdown = NewShutdown(context.Background(), 0)
+var defaultShutdown atomic.Pointer[Shutdown]
 
 func DefaultShutdown() *Shutdown {
-	return defaultShutdown
+	return defaultShutdown.Load()
 }
 
 func EasyShutdown(

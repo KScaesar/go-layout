@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -157,14 +158,14 @@ func LoggerWhenGoTest() *WrapLogger {
 	return logger
 }
 
-var defaultLogger = LoggerWhenGoTest()
+var defaultLogger atomic.Pointer[WrapLogger]
 
 func DefaultLogger() *WrapLogger {
-	return defaultLogger
+	return defaultLogger.Load()
 }
 
 func SetDefaultLogger(logger *WrapLogger) {
-	defaultLogger = logger
+	defaultLogger.Store(logger)
 }
 
 //

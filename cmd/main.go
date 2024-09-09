@@ -12,7 +12,7 @@ import (
 
 func init() {
 	logger := utility.LoggerWhenDebug()
-	logger.Logger = logger.With(slog.Any("svc", pkg.Service))
+	logger.Logger = logger.With(slog.Any("svc", pkg.Service()))
 	utility.SetDefaultLogger(logger)
 }
 
@@ -20,7 +20,7 @@ func init() {
 func Init(conf *configs.Config) {
 	writer := os.Stdout
 	logger := utility.NewWrapLogger(writer, &conf.Logger)
-	logger.Logger = logger.With(slog.String("svc", pkg.Service.Name))
+	logger.Logger = logger.With(slog.String("svc", pkg.Service().Name))
 	logger.SetStdDefaultLevel()
 	logger.SetStdDefaultLogger()
 	utility.SetDefaultLogger(logger)
@@ -33,7 +33,7 @@ func main() {
 	logger := utility.DefaultLogger()
 	logger.Debug("print config", slog.Any("conf", conf))
 
-	err := utility.ServeObservability(pkg.Service.Name, &conf.O11Y)
+	err := utility.ServeObservability(pkg.Service().Name, &conf.O11Y)
 	if err != nil {
 		logger.Error("serve o11y fail", slog.Any("err", err))
 		os.Exit(1)

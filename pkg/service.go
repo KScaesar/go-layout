@@ -3,15 +3,20 @@ package pkg
 import (
 	"log/slog"
 	"runtime/debug"
+	"sync/atomic"
 )
 
 var (
 	commit string
 )
 
-var Service = newService("CRM")
+var defaultService atomic.Pointer[service]
 
-func newService(name string) service {
+func Service() service {
+	return *(defaultService.Load())
+}
+
+func newService(name string) *service {
 	Commit := commit
 	if Commit == "" {
 		if info, ok := debug.ReadBuildInfo(); ok {
@@ -23,7 +28,7 @@ func newService(name string) service {
 		}
 	}
 
-	return service{
+	return &service{
 		Name:   name,
 		Commit: Commit,
 	}
