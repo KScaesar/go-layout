@@ -161,12 +161,12 @@ func (s *Shutdown) Serve() {
 	s.Logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
 	start := time.Now()
 
-	finish := make(chan struct{}, 1)
 	var timeout <-chan time.Time
 	if s.waitSeconds > 0 {
 		timeout = time.NewTimer(time.Duration(s.waitSeconds) * time.Second).C
 	}
 
+	finish := make(chan struct{}, 1)
 	go func() {
 		s.terminate()
 		finish <- struct{}{}
