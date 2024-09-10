@@ -157,10 +157,21 @@ func LoggerWhenDebug() *WrapLogger {
 	return logger
 }
 
-func LoggerWhenGoTest() *WrapLogger {
+func LoggerWhenGoTest(source bool) *WrapLogger {
+	const info = 0
+	conf := &LoggerConfig{
+		AddSource:  source,
+		JsonFormat: false,
+		Level_:     info,
+	}
+	logger := NewWrapLogger(os.Stdout, conf)
+	return logger
+}
+
+func LoggerWhenContinuousIntegration() *WrapLogger {
 	const warn = 4
 	conf := &LoggerConfig{
-		AddSource:  true,
+		AddSource:  false,
 		JsonFormat: false,
 		Level_:     warn,
 	}

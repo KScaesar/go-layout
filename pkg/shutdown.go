@@ -14,12 +14,12 @@ func DefaultShutdown() *utility.Shutdown {
 	return defaultShutdown.Load()
 }
 
-func SetDefaultShutdown(l *slog.Logger) {
-	defaultShutdown.Store(NewShutdown(l))
+func SetDefaultShutdown(shutdown *utility.Shutdown) {
+	defaultShutdown.Store(shutdown)
 }
 
-func NewShutdown(l *slog.Logger) *utility.Shutdown {
-	shutdown := utility.NewShutdown(context.Background(), 0)
+func NewShutdown(l *slog.Logger, waitSeconds int) *utility.Shutdown {
+	shutdown := utility.NewShutdown(context.Background(), waitSeconds)
 	shutdown.Logger = l
 	return shutdown
 }

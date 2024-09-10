@@ -24,7 +24,7 @@ func Init(conf *configs.Config) {
 	logger.SetStdDefaultLevel()
 	logger.SetStdDefaultLogger()
 	pkg.SetDefaultLogger(logger)
-	pkg.SetDefaultShutdown(logger.Logger)
+	pkg.SetDefaultShutdown(pkg.NewShutdown(logger.Logger, 0))
 	return
 }
 

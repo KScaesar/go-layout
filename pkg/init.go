@@ -6,6 +6,6 @@ import (
 
 func init() {
 	defaultVersion.Store(newVersion("CRM"))
-	defaultLogger.Store(utility.LoggerWhenGoTest())
-	defaultShutdown.Store(NewShutdown(DefaultLogger().Logger))
+	SetDefaultLogger(utility.LoggerWhenGoTest(false))
+	SetDefaultShutdown(NewShutdown(DefaultLogger().Logger, 0))
 }
