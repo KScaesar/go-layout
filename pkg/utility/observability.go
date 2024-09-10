@@ -37,7 +37,12 @@ func (o O11YConfig) TraceAddress() string {
 
 //
 
-func ServeObservability(svcName string, conf *O11YConfig) error {
+func ServeObservability(
+	svcName string,
+	conf *O11YConfig,
+	logger *slog.Logger,
+	shutdown *Shutdown,
+) error {
 	ctx := context.Background()
 
 	if conf.EnableTrace {
@@ -62,7 +67,7 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 		)
 		otel.SetTracerProvider(provider)
 
-		DefaultShutdown().AddPriorityShutdownAction(2, "trace", func() error {
+		shutdown.AddPriorityShutdownAction(2, "trace", func() error {
 			return provider.Shutdown(ctx)
 		})
 	}
@@ -74,17 +79,16 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 	// https://pkg.go.dev/runtime/pprof#Profile
 
 	// metric
-
 	http.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{Addr: "0.0.0.0:" + conf.Port, Handler: http.DefaultServeMux}
 	go func() {
-		DefaultLogger().Info("pprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/pprof"))
-		DefaultLogger().Info("metric start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/metrics"))
+		logger.Info("pprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/pprof"))
+		logger.Info("metric start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/metrics"))
 		err := server.ListenAndServe()
-		DefaultShutdown().Notify(err)
+		shutdown.Notify(err)
 	}()
-	DefaultShutdown().AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
+	shutdown.AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
 		return server.Shutdown(ctx)
 	})
 

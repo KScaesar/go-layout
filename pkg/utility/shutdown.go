@@ -7,16 +7,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"sync/atomic"
 	"syscall"
 	"time"
 )
-
-var defaultShutdown atomic.Pointer[Shutdown]
-
-func DefaultShutdown() *Shutdown {
-	return defaultShutdown.Load()
-}
 
 func EasyShutdown(
 	waitSeconds int, component string, stopAction func() error,
@@ -57,6 +50,8 @@ func NewShutdown(countdown context.Context, waitSeconds int) *Shutdown {
 		countdown: ctx,
 		notify:    cancel,
 
+		Logger: slog.Default(), // 透過 std logger 的預設值, 簡化參數設定, 但可能和其他功能衝突
+
 		waitSeconds: waitSeconds,
 		done:        make(chan struct{}),
 	}
@@ -76,7 +71,8 @@ type Shutdown struct {
 	waitSeconds int
 	done        chan struct{}
 
-	mu sync.Mutex
+	Logger *slog.Logger
+	mu     sync.Mutex
 
 	// The fields `names`, `actions` and `waitBlocked` use an array of size 3,
 	// representing three priority levels for shutdown process.
@@ -91,7 +87,7 @@ type Shutdown struct {
 //
 // Parameters:
 //   - priority: Priority of the action (0 is the highest, and 2 is the lowest).
-//   - component: Name of the components.
+//   - component: ServiceName of the components.
 //   - stopAction: Function to execute during shutdown.
 func (s *Shutdown) AddPriorityShutdownAction(priority uint, component string, stopAction func() error) *Shutdown {
 	s.mu.Lock()
@@ -141,7 +137,7 @@ func (s *Shutdown) Serve() {
 
 	defer close(s.done)
 
-	logger := DefaultLogger()
+	logger := s.Logger
 	select {
 	case sig := <-s.osSig:
 		logger.Info("recv os signal",
@@ -197,7 +193,7 @@ func (s *Shutdown) terminate() {
 			go func(number int) {
 				defer wg.Done()
 
-				logger := DefaultLogger().With(
+				logger := s.Logger.With(
 					slog.Int("no.", number),
 					slog.Int("priority", priority),
 					slog.String("component", component),

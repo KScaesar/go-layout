@@ -5,16 +5,26 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"gopkg.in/yaml.v3"
 )
 
 func MustLoadConfig(filePath string) *Config {
-	conf, err := utility.LoadLocalConfigFromMultiSource[Config](yaml.Unmarshal, filePath, "local.yml")
+	logger := pkg.DefaultLogger().Logger
+
+	conf, err := utility.LoadLocalConfigFromMultiSource[Config](
+		yaml.Unmarshal,
+		filePath,
+		"local.yml",
+		logger,
+	)
 	if err != nil {
-		utility.DefaultLogger().Error("load config fail", slog.Any("err", err))
+		logger.Error("load config fail", slog.Any("err", err))
 		os.Exit(1)
 	}
+
+	logger.Debug("print config", slog.Any("conf", conf))
 	return conf
 }
 

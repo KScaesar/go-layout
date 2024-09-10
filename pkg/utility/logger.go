@@ -9,7 +9,6 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,24 +18,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 )
-
-//
-
-type logKey struct{}
-
-func CtxWithLogger(ctx context.Context, v *slog.Logger) context.Context {
-	return context.WithValue(ctx, logKey{}, v)
-}
-
-func CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
-	v, ok := ctx.Value(logKey{}).(*slog.Logger)
-	if !ok {
-		return DefaultLogger().Logger
-	}
-	return v
-}
-
-//
 
 type LoggerConfig struct {
 	AddSource  bool `yaml:"AddSource"`
@@ -135,6 +116,18 @@ type WrapLogger struct {
 	*slog.Logger
 }
 
+func (l *WrapLogger) CtxWithLogger(ctx context.Context, v *slog.Logger) context.Context {
+	return context.WithValue(ctx, l.Logger, v)
+}
+
+func (l *WrapLogger) CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
+	v, ok := ctx.Value(l.Logger).(*slog.Logger)
+	if !ok {
+		return l.Logger
+	}
+	return v
+}
+
 func (l WrapLogger) Level() slog.Level {
 	return l.lvl.Level()
 }
@@ -175,19 +168,9 @@ func LoggerWhenGoTest() *WrapLogger {
 	return logger
 }
 
-var defaultLogger atomic.Pointer[WrapLogger]
-
-func DefaultLogger() *WrapLogger {
-	return defaultLogger.Load()
-}
-
-func SetDefaultLogger(logger *WrapLogger) {
-	defaultLogger.Store(logger)
-}
-
 //
 
-func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
+func GinO11YLogger(debug bool, enableTrace bool, Logger *WrapLogger) []gin.HandlerFunc {
 	var config sloggin.Config
 	config.WithRequestID = true
 
@@ -210,7 +193,7 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 	sloggin.RequestIDKey = "req_id"
 
 	return []gin.HandlerFunc{
-		sloggin.NewWithConfig(DefaultLogger().Logger, config),
+		sloggin.NewWithConfig(Logger.Logger, config),
 
 		func(c *gin.Context) {
 			ctx := c.Request.Context()
@@ -220,7 +203,7 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 				slog.String("method", c.Request.Method),
 				slog.String("path", c.Request.URL.Path),
 			}
-			logger := DefaultLogger().With(
+			logger := Logger.With(
 				slog.Any("request", slog.GroupValue(requestAttributes...)),
 				slog.String(sloggin.RequestIDKey, reqId),
 			)
@@ -236,16 +219,15 @@ func GinO11YLogger(debug bool, enableTrace bool) []gin.HandlerFunc {
 				)
 			}
 
-			c.Request = c.Request.WithContext(CtxWithLogger(ctx, logger))
+			c.Request = c.Request.WithContext(Logger.CtxWithLogger(ctx, logger))
 			c.Next()
 		},
 	}
 }
 
-func GinSetLoggerLevel(hack Hack) gin.HandlerFunc {
+func GinSetLoggerLevel(hack Hack, logger *WrapLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if hack.Challenge(c.Query("hack_level")) {
-			logger := DefaultLogger()
 
 			switch c.Query("level") {
 			case "info":

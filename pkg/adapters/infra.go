@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/KScaesar/go-layout/configs"
-	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/KScaesar/go-layout/pkg"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 
@@ -22,7 +22,7 @@ func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
 		db = db.Debug()
 	}
 
-	utility.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", func() error {
+	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", func() error {
 		stdDB, err := db.DB()
 		if err != nil {
 			return err
@@ -49,7 +49,7 @@ func NewRedis(conf *configs.Redis) (*redis.Client, error) {
 		return nil, err
 	}
 
-	utility.DefaultShutdown().AddPriorityShutdownAction(2, "redis", client.Close)
+	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "redis", client.Close)
 	return client, nil
 }
 

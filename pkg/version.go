@@ -11,13 +11,13 @@ var (
 	release string
 )
 
-var defaultService atomic.Pointer[service]
+var defaultVersion atomic.Pointer[Version]
 
-func Service() service {
-	return *(defaultService.Load())
+func DefaultVersion() Version {
+	return *(defaultVersion.Load())
 }
 
-func newService(name string) *service {
+func newVersion(name string) *Version {
 	Commit := commit
 	goVersion := ""
 	if Commit == "" {
@@ -32,24 +32,24 @@ func newService(name string) *service {
 		}
 	}
 
-	return &service{
-		Name:      name,
-		Commit:    Commit,
-		Release:   release,
-		GoVersion: goVersion,
+	return &Version{
+		ServiceName: name,
+		Commit:      Commit,
+		Release:     release,
+		GoVersion:   goVersion,
 	}
 }
 
-type service struct {
-	Name      string `json:"name"`
-	Commit    string `json:"commit"`
-	Release   string `json:"release"`
-	GoVersion string `json:"go_version"`
+type Version struct {
+	ServiceName string `json:"name"`
+	Commit      string `json:"commit"`
+	Release     string `json:"release"`
+	GoVersion   string `json:"go_version"`
 }
 
-func (svc service) LogValue() slog.Value {
+func (svc Version) LogValue() slog.Value {
 	return slog.GroupValue(
-		slog.String("name", svc.Name),
+		slog.String("svc", svc.ServiceName),
 		slog.String("commit", svc.Commit),
 		slog.String("release", svc.Release),
 		slog.String("go_version", svc.GoVersion),

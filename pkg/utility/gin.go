@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
+func GinRoutes(router *gin.Engine, hack Hack, logger *WrapLogger) func(*gin.Context) {
 	routes := make([]string, 0)
 	for _, route := range router.Routes() {
 		routes = append(routes, fmt.Sprintf("%-8v %v", route.Method, route.Path))
@@ -18,7 +18,7 @@ func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 
 	return func(c *gin.Context) {
 		call := func() {
-			CtxGetLogger(c.Request.Context()).Info("good",
+			logger.CtxGetLogger(c.Request.Context()).Info("good",
 				slog.Time("now", time.Now()),
 			)
 		}
