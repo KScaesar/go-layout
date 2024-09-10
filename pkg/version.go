@@ -6,34 +6,35 @@ import (
 )
 
 var (
-	commit  string
 	release string
 )
 
-var defaultVersion = newVersion("CRM")
+var defaultVersion = newVersion()
 
 func Version() version {
 	return defaultVersion
 }
 
-func newVersion(name string) version {
-	Commit := commit
+func newVersion() version {
+	commit := ""
 	goVersion := ""
-	if Commit == "" {
-		if info, ok := debug.ReadBuildInfo(); ok {
-			goVersion = info.GoVersion
+	if info, ok := debug.ReadBuildInfo(); ok {
+		goVersion = info.GoVersion
 
-			for _, setting := range info.Settings {
-				if setting.Key == "vcs.revision" {
-					Commit = setting.Value[:8]
-				}
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				commit = setting.Value
 			}
 		}
 	}
 
+	if len(commit) >= 8 {
+		commit = commit[:8]
+	}
+
 	return version{
-		ServiceName: name,
-		Commit:      Commit,
+		ServiceName: "CRM",
+		Commit:      commit,
 		Release:     release,
 		GoVersion:   goVersion,
 	}
