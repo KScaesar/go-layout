@@ -17,10 +17,12 @@ func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 	resp := strings.Join(routes, "\n")
 
 	return func(c *gin.Context) {
-		CtxGetLogger(c.Request.Context()).Info("good",
-			slog.Time("now", time.Now()),
-			slog.Any("frame", GinRoutes),
-		)
+		call := func() {
+			CtxGetLogger(c.Request.Context()).Info("good",
+				slog.Time("now", time.Now()),
+			)
+		}
+		call()
 
 		if hack.Challenge(c.Query("hack_api")) {
 			c.String(200, resp)

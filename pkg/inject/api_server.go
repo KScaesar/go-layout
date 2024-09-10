@@ -44,7 +44,7 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 
 func ServeApiServer(port string, handler http.Handler) {
 	server := &http.Server{
-		Addr:         ":" + port,
+		Addr:         "0.0.0.0:" + port,
 		Handler:      handler,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
@@ -53,7 +53,7 @@ func ServeApiServer(port string, handler http.Handler) {
 	protocol := func() string { return "http" }
 
 	go func() {
-		utility.DefaultLogger().Info("api start", slog.String("url", protocol()+"://localhost:"+port))
+		utility.DefaultLogger().Info("api start", slog.String("url", protocol()+"://0.0.0.0:"+port))
 		err := server.ListenAndServe()
 		utility.DefaultShutdown().Notify(err)
 	}()

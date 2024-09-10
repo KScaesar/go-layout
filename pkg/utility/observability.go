@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/http/pprof"
+	_ "net/http/pprof"
 	"strconv"
 	"time"
 
@@ -24,19 +24,11 @@ import (
 )
 
 type O11YConfig struct {
-	MetricPort_ string  `yaml:"MetricPort"`
+	Port        string  `yaml:"Port"`
 	EnableTrace bool    `yaml:"EnableTrace"`
 	TraceHost   string  `yaml:"TraceHost"`
 	TracePort   string  `yaml:"TracePort"`
 	SampleRate  float64 `yaml:"SampleRate"` // 0 ~ 1
-}
-
-func (o *O11YConfig) MetricPort() string {
-	if o.MetricPort_ == "" {
-		const DefaultMetricPort = "2112"
-		o.MetricPort_ = DefaultMetricPort
-	}
-	return o.MetricPort_
 }
 
 func (o O11YConfig) TraceAddress() string {
@@ -80,24 +72,19 @@ func ServeObservability(svcName string, conf *O11YConfig) error {
 	//
 	// custom pprof
 	// https://pkg.go.dev/runtime/pprof#Profile
-	http.Handle("/debug/pprof/profile/goroutine", pprof.Handler("goroutine"))
-	http.Handle("/debug/pprof/profile/heap", pprof.Handler("heap"))
-	http.Handle("/debug/pprof/profile/allocs", pprof.Handler("allocs"))
-	http.Handle("/debug/pprof/profile/threadcreate", pprof.Handler("threadcreate"))
-	http.Handle("/debug/pprof/profile/block", pprof.Handler("block"))
-	http.Handle("/debug/pprof/profile/mutex", pprof.Handler("mutex"))
 
 	// metric
 
 	http.Handle("/metrics", promhttp.Handler())
 
-	server := &http.Server{Addr: ":" + conf.MetricPort(), Handler: http.DefaultServeMux}
+	server := &http.Server{Addr: "0.0.0.0:" + conf.Port, Handler: http.DefaultServeMux}
 	go func() {
-		DefaultLogger().Info("metric start", slog.String("url", "http://localhost:"+conf.MetricPort()+"/metrics"))
+		DefaultLogger().Info("pprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/pprof"))
+		DefaultLogger().Info("metric start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/metrics"))
 		err := server.ListenAndServe()
 		DefaultShutdown().Notify(err)
 	}()
-	DefaultShutdown().AddPriorityShutdownAction(2, "metric", func() error {
+	DefaultShutdown().AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
 		return server.Shutdown(ctx)
 	})
 
