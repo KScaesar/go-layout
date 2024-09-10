@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"reflect"
+	"runtime"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -75,13 +77,28 @@ func NewWrapLogger(w io.Writer, conf *LoggerConfig) *WrapLogger {
 			buf.WriteByte(':')
 			buf.WriteString(strconv.Itoa(src.Line))
 			a.Value = slog.StringValue(buf.String())
+			return a
 		}
+
 		if a.Value.Kind() == slog.KindTime {
 			a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
+			return a
 		}
+
 		if a.Value.Kind() == slog.KindDuration {
 			a.Value = slog.StringValue(a.Value.Duration().String())
+			return a
 		}
+
+		if a.Value.Kind() == slog.KindAny {
+			rv := reflect.ValueOf(a.Value.Any())
+			if rv.Kind() != reflect.Func {
+				return a
+			}
+			a.Value = slog.StringValue(runtime.FuncForPC(rv.Pointer()).Name())
+			return a
+		}
+
 		return a
 	}
 

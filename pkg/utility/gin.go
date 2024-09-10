@@ -19,6 +19,7 @@ func GinRoutes(router *gin.Engine, hack Hack) func(*gin.Context) {
 	return func(c *gin.Context) {
 		CtxGetLogger(c.Request.Context()).Info("good",
 			slog.Time("now", time.Now()),
+			slog.Any("frame", GinRoutes),
 		)
 
 		if hack.Challenge(c.Query("hack_api")) {
