@@ -29,7 +29,12 @@ func main() {
 
 	go shutdown.Serve()
 	defer func() {
+		if err == nil {
+			return
+		}
 		shutdown.Notify(err)
+		<-shutdown.WaitChannel()
+		os.Exit(1)
 	}()
 
 	if err = utility.ServeObservability(
@@ -39,14 +44,14 @@ func main() {
 		shutdown,
 	); err != nil {
 		logger.Error("serve o11y failed", slog.Any("err", err))
-		os.Exit(1)
+		return
 	}
 
 	infra, Err := inject.NewInfra(conf)
 	if Err != nil {
 		err = Err
 		logger.Error("create infra failed", slog.Any("err", Err))
-		os.Exit(1)
+		return
 	}
 
 	svc := inject.NewService(conf, infra)
