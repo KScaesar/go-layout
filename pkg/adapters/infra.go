@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/KScaesar/go-layout/configs"
@@ -13,22 +14,32 @@ import (
 )
 
 func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
-	db, err := gorm.Open(mysql.Open(conf.DSN()), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(conf.DSN()), &gorm.Config{
+		Logger:                                   nil,
+		NowFunc:                                  nil,
+		DryRun:                                   false,
+		DisableForeignKeyConstraintWhenMigrating: false,
+		IgnoreRelationshipsWhenMigrating:         false,
+	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connect mysql: %w", err)
+	}
+
+	stdDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("get stdDB: %w", err)
+	}
+
+	err = stdDB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("ping mysql: %w", err)
 	}
 
 	if conf.Debug {
 		db = db.Debug()
 	}
 
-	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", func() error {
-		stdDB, err := db.DB()
-		if err != nil {
-			return err
-		}
-		return stdDB.Close()
-	})
+	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", stdDB.Close)
 	return db, nil
 }
 
@@ -46,7 +57,7 @@ func NewRedis(conf *configs.Redis) (*redis.Client, error) {
 
 	err := client.Ping(context.Background()).Err()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
 	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "redis", client.Close)
