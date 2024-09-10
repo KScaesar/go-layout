@@ -11,7 +11,7 @@ func NewLoggerWhenDebug() *Logger {
 		JsonFormat: false,
 		Level_:     debug,
 	}
-	logger := NewLogger(os.Stdout, conf)
+	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
 	return logger
 }
 
@@ -22,7 +22,7 @@ func NewLoggerWhenNormalRun(source bool) *Logger {
 		JsonFormat: false,
 		Level_:     info,
 	}
-	logger := NewLogger(os.Stdout, conf)
+	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
 	return logger
 }
 
@@ -33,6 +33,6 @@ func NewLoggerWhenContinuousIntegration() *Logger {
 		JsonFormat: false,
 		Level_:     warn,
 	}
-	logger := NewLogger(os.Stdout, conf)
+	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
 	return logger
 }

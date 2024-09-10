@@ -15,8 +15,7 @@ func init() {
 
 // Init initializes the necessary default global variables
 func Init(conf *configs.Config) {
-	writer := os.Stdout
-	logger := wlog.NewLogger(writer, &conf.Logger)
+	logger := wlog.NewLogger(os.Stdout, &conf.Logger, wlog.DefaultFormat()...)
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	logger.SetStdDefaultLevel()
 	logger.SetStdDefaultLogger()

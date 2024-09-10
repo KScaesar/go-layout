@@ -25,14 +25,7 @@ func (conf Config) Level() slog.Level {
 	return slog.Level(conf.Level_)
 }
 
-func NewLogger(w io.Writer, conf *Config) *Logger {
-	formats := []FormatFunc{
-		FormatSource(conf.JsonFormat),
-		FormatKindTime(),
-		FormatKindDuration(),
-		FormatTypeFunc(),
-	}
-
+func NewLogger(w io.Writer, conf *Config, formats ...FormatFunc) *Logger {
 	stdReplace := func(groups []string, a slog.Attr) slog.Attr {
 		for _, format := range formats {
 			attr, ok := format(groups, a)

@@ -12,7 +12,16 @@ import (
 
 type FormatFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
 
-func FormatSource(json bool) FormatFunc {
+func DefaultFormat() []FormatFunc {
+	return []FormatFunc{
+		FormatKeySource(),
+		FormatKindTime(),
+		FormatKindDuration(),
+		FormatTypeFunc(),
+	}
+}
+
+func FormatKeySource() FormatFunc {
 	pool := sync.Pool{
 		New: func() any {
 			return new(bytes.Buffer)
@@ -20,7 +29,7 @@ func FormatSource(json bool) FormatFunc {
 	}
 
 	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
-		if !json && a.Key == slog.SourceKey {
+		if a.Key == slog.SourceKey {
 			src, ok := a.Value.Any().(*slog.Source)
 			if !ok {
 				return a, false
