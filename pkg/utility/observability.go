@@ -47,7 +47,7 @@ func ServeObservability(
 			),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to create OTLP trace exporter: %w", err)
+			return fmt.Errorf("create OTLP trace exporter: %w", err)
 		}
 
 		provider := sdktrace.NewTracerProvider(
