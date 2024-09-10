@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-type LoggerConfig struct {
+type Config struct {
 	AddSource  bool `yaml:"AddSource"`
 	JsonFormat bool `yaml:"JsonFormat"`
 
@@ -21,11 +21,11 @@ type LoggerConfig struct {
 	Level_ int `yaml:"Level"`
 }
 
-func (l LoggerConfig) Level() slog.Level {
-	return slog.Level(l.Level_)
+func (conf Config) Level() slog.Level {
+	return slog.Level(conf.Level_)
 }
 
-func NewLogger(w io.Writer, conf *LoggerConfig) *Logger {
+func NewLogger(w io.Writer, conf *Config) *Logger {
 	formats := []FormatFunc{
 		FormatSource(conf.JsonFormat),
 		FormatKindTime(),

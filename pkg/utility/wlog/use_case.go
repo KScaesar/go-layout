@@ -4,9 +4,9 @@ import (
 	"os"
 )
 
-func LoggerWhenDebug() *Logger {
+func NewLoggerWhenDebug() *Logger {
 	const debug = -4
-	conf := &LoggerConfig{
+	conf := &Config{
 		AddSource:  true,
 		JsonFormat: false,
 		Level_:     debug,
@@ -15,9 +15,9 @@ func LoggerWhenDebug() *Logger {
 	return logger
 }
 
-func LoggerWhenGoTest(source bool) *Logger {
+func NewLoggerWhenNormalRun(source bool) *Logger {
 	const info = 0
-	conf := &LoggerConfig{
+	conf := &Config{
 		AddSource:  source,
 		JsonFormat: false,
 		Level_:     info,
@@ -26,9 +26,9 @@ func LoggerWhenGoTest(source bool) *Logger {
 	return logger
 }
 
-func LoggerWhenContinuousIntegration() *Logger {
+func NewLoggerWhenContinuousIntegration() *Logger {
 	const warn = 4
-	conf := &LoggerConfig{
+	conf := &Config{
 		AddSource:  true,
 		JsonFormat: false,
 		Level_:     warn,

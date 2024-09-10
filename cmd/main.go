@@ -12,8 +12,8 @@ import (
 )
 
 func init() {
-	logger := wlog.LoggerWhenDebug()
-	logger.Logger = logger.With(slog.Any("version", pkg.DefaultVersion()))
+	logger := wlog.NewLoggerWhenNormalRun(true)
+	logger.Logger = logger.With(slog.Any("version", pkg.Version()))
 	pkg.SetDefaultLogger(logger)
 }
 
@@ -33,7 +33,7 @@ func main() {
 	}()
 
 	if err = utility.ServeObservability(
-		pkg.DefaultVersion().ServiceName,
+		pkg.Version().ServiceName,
 		&conf.O11Y,
 		logger.Logger,
 		shutdown,

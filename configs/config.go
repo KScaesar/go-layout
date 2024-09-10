@@ -35,7 +35,7 @@ type Config struct {
 	Redis Redis `yaml:"Redis"`
 
 	O11Y   utility.O11YConfig `yaml:"O11Y"`
-	Logger wlog.LoggerConfig  `yaml:"Logger"`
+	Logger wlog.Config        `yaml:"Logger"`
 }
 
 func (c *Config) ServiceId() string {

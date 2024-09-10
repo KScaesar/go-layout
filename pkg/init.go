@@ -9,19 +9,18 @@ import (
 )
 
 func init() {
-	defaultVersion.Store(newVersion("CRM"))
-	SetDefaultLogger(wlog.LoggerWhenGoTest(false))
-	SetDefaultShutdown(NewShutdownWhenInit(DefaultLogger().Logger, 0))
+	SetDefaultLogger(wlog.NewLoggerWhenNormalRun(false))
+	SetDefaultShutdown(NewShutdownWhenDefault(DefaultLogger().Logger, 0))
 }
 
 // Init initializes the necessary default global variables
 func Init(conf *configs.Config) {
 	writer := os.Stdout
 	logger := wlog.NewLogger(writer, &conf.Logger)
-	logger.Logger = logger.With(slog.String("svc", DefaultVersion().ServiceName))
+	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	logger.SetStdDefaultLevel()
 	logger.SetStdDefaultLogger()
 	SetDefaultLogger(logger)
-	SetDefaultShutdown(NewShutdownWhenInit(logger.Logger, 0))
+	SetDefaultShutdown(NewShutdownWhenDefault(logger.Logger, 0))
 	return
 }

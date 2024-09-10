@@ -24,7 +24,7 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 		Use(
 			gin.Recovery(),
 			utility.GinO11YTrace(conf.O11Y.EnableTrace),
-			utility.GinO11YMetric(pkg.DefaultVersion().ServiceName, conf.O11Y.EnableTrace),
+			utility.GinO11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
 		).
 		Use(utility.GinO11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.DefaultLogger())...).
 		Use(

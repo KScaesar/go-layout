@@ -3,7 +3,6 @@ package pkg
 import (
 	"log/slog"
 	"runtime/debug"
-	"sync/atomic"
 )
 
 var (
@@ -11,13 +10,13 @@ var (
 	release string
 )
 
-var defaultVersion atomic.Pointer[Version]
+var defaultVersion = newVersion("CRM")
 
-func DefaultVersion() Version {
-	return *(defaultVersion.Load())
+func Version() version {
+	return defaultVersion
 }
 
-func newVersion(name string) *Version {
+func newVersion(name string) version {
 	Commit := commit
 	goVersion := ""
 	if Commit == "" {
@@ -32,7 +31,7 @@ func newVersion(name string) *Version {
 		}
 	}
 
-	return &Version{
+	return version{
 		ServiceName: name,
 		Commit:      Commit,
 		Release:     release,
@@ -40,14 +39,14 @@ func newVersion(name string) *Version {
 	}
 }
 
-type Version struct {
+type version struct {
 	ServiceName string `json:"name"`
 	Commit      string `json:"commit"`
 	Release     string `json:"release"`
 	GoVersion   string `json:"go_version"`
 }
 
-func (svc Version) LogValue() slog.Value {
+func (svc version) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("svc", svc.ServiceName),
 		slog.String("commit", svc.Commit),
