@@ -1,11 +1,8 @@
-package utility
+package wgin
 
 import (
-	"fmt"
 	"log/slog"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
@@ -17,27 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
-
-func GinRoutes(router *gin.Engine, hack Hack, logger *wlog.Logger) func(*gin.Context) {
-	routes := make([]string, 0)
-	for _, route := range router.Routes() {
-		routes = append(routes, fmt.Sprintf("%-8v %v", route.Method, route.Path))
-	}
-	resp := strings.Join(routes, "\n")
-
-	return func(c *gin.Context) {
-		logger.CtxGetLogger(c.Request.Context()).Info("good",
-			slog.Time("print_time", time.Now()),
-			slog.Any("print_fn", GinO11YMetric),
-		)
-
-		if hack.Challenge(c.Query("hack_api")) {
-			c.String(200, resp)
-			return
-		}
-		c.String(200, "hello")
-	}
-}
 
 func GinO11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.HandlerFunc {
 	var config sloggin.Config
@@ -91,26 +67,6 @@ func GinO11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.Hand
 			c.Request = c.Request.WithContext(Logger.CtxWithLogger(ctx, logger))
 			c.Next()
 		},
-	}
-}
-
-func GinSetLoggerLevel(hack Hack, logger *wlog.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if hack.Challenge(c.Query("hack_level")) {
-
-			switch c.Query("level") {
-			case "info":
-				logger.SetLevel(slog.LevelInfo)
-				logger.SetStdDefaultLevel()
-
-			case "debug":
-				logger.SetLevel(slog.LevelDebug)
-				logger.SetStdDefaultLevel()
-			}
-
-			c.JSON(http.StatusOK, gin.H{"level": logger.Level()})
-			return
-		}
 	}
 }
 
