@@ -26,12 +26,10 @@ func GinRoutes(router *gin.Engine, hack Hack, logger *wlog.Logger) func(*gin.Con
 	resp := strings.Join(routes, "\n")
 
 	return func(c *gin.Context) {
-		call := func() {
-			logger.CtxGetLogger(c.Request.Context()).Info("good",
-				slog.Time("now", time.Now()),
-			)
-		}
-		call()
+		logger.CtxGetLogger(c.Request.Context()).Info("good",
+			slog.Time("print_time", time.Now()),
+			slog.Any("print_fn", GinO11YMetric),
+		)
 
 		if hack.Challenge(c.Query("hack_api")) {
 			c.String(200, resp)

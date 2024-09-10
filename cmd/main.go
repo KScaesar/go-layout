@@ -26,8 +26,8 @@ func main() {
 	pkg.Init(conf)
 	logger := pkg.DefaultLogger()
 	shutdown := pkg.DefaultShutdown()
-	go shutdown.Serve()
 
+	go shutdown.Serve()
 	defer func() {
 		shutdown.Notify(err)
 	}()
@@ -38,19 +38,19 @@ func main() {
 		logger.Logger,
 		shutdown,
 	); err != nil {
-		logger.Error("serve o11y fail", slog.Any("err", err))
+		logger.Error("serve o11y failed", slog.Any("err", err))
 		os.Exit(1)
 	}
 
 	infra, Err := inject.NewInfra(conf)
 	if Err != nil {
 		err = Err
-		logger.Error("create infra fail", slog.Any("err", Err))
+		logger.Error("create infra failed", slog.Any("err", Err))
 		os.Exit(1)
 	}
 
-	service := inject.NewService(conf, infra)
-	mux := inject.NewHttpMux(conf, infra.MySql, service)
+	svc := inject.NewService(conf, infra)
+	mux := inject.NewHttpMux(conf, infra.MySql, svc)
 	inject.ServeApiServer(conf.Http.Port, mux)
 
 	<-shutdown.WaitChannel()
