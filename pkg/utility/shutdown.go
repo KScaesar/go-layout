@@ -167,18 +167,20 @@ func (s *Shutdown) Serve() {
 	if s.waitSeconds > 0 {
 		timeout = time.NewTimer(time.Duration(s.waitSeconds) * time.Second).C
 	}
+
 	go func() {
 		s.terminate()
 		finish <- struct{}{}
 	}()
+
 	select {
 	case <-timeout:
-		logger.Error("shutdown timeout")
+		duration := time.Since(start)
+		logger.Error("shutdown failed because timeout", slog.String("duration", duration.String()))
 	case <-finish:
+		duration := time.Since(start)
+		logger.Info("shutdown finish", slog.String("duration", duration.String()))
 	}
-
-	duration := time.Since(start)
-	logger.Info("shutdown finish", slog.String("duration", duration.String()))
 }
 
 func (s *Shutdown) terminate() {
@@ -200,12 +202,16 @@ func (s *Shutdown) terminate() {
 				)
 
 				logger.Info("shutdown start")
+				start := time.Now()
+
 				err := s.actions[priority][component]()
 				if err != nil {
 					logger.Error("shutdown fail", slog.Any("err", err))
 					return
 				}
-				logger.Info("shutdown finish")
+
+				duration := time.Since(start)
+				logger.Info("shutdown finish", slog.String("duration", duration.String()))
 
 			}(seq)
 		}
