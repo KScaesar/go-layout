@@ -21,8 +21,6 @@ func MustLoadConfig(filePath string, logger *slog.Logger) *Config {
 		logger.Error("load config fail", slog.Any("err", err))
 		os.Exit(1)
 	}
-
-	logger.Debug("print config", slog.Any("conf", conf))
 	return conf
 }
 
@@ -51,8 +49,8 @@ func (c *Config) ServiceId() string {
 }
 
 type Http struct {
-	Port  string `yaml:"Port"`
-	Debug bool   `yaml:"Debug"`
+	Port     string `yaml:"Port"`
+	GinDebug bool   `yaml:"GinDebug"`
 }
 
 type MySql struct {

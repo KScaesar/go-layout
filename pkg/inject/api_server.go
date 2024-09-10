@@ -15,7 +15,7 @@ import (
 )
 
 func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
-	if !conf.Http.Debug {
+	if !conf.Http.GinDebug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
@@ -26,7 +26,7 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 			utility.GinO11YTrace(conf.O11Y.EnableTrace),
 			utility.GinO11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
 		).
-		Use(utility.GinO11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.DefaultLogger())...).
+		Use(utility.GinO11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.DefaultLogger())...).
 		Use(
 			utility.GinGormTransaction(db, []string{}),
 		)
