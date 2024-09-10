@@ -39,7 +39,7 @@ func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
 		db = db.Debug()
 	}
 
-	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "mysql", stdDB.Close)
+	pkg.Shutdown().AddPriorityShutdownAction(2, "mysql", stdDB.Close)
 	return db, nil
 }
 
@@ -60,7 +60,7 @@ func NewRedis(conf *configs.Redis) (*redis.Client, error) {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
-	pkg.DefaultShutdown().AddPriorityShutdownAction(2, "redis", client.Close)
+	pkg.Shutdown().AddPriorityShutdownAction(2, "redis", client.Close)
 	return client, nil
 }
 

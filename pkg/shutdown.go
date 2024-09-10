@@ -10,11 +10,11 @@ import (
 
 var defaultShutdown atomic.Pointer[utility.Shutdown]
 
-func DefaultShutdown() *utility.Shutdown {
+func Shutdown() *utility.Shutdown {
 	return defaultShutdown.Load()
 }
 
-func SetDefaultShutdown(shutdown *utility.Shutdown) {
+func SetShutdown(shutdown *utility.Shutdown) {
 	defaultShutdown.Store(shutdown)
 }
 

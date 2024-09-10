@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	SetDefaultLogger(wlog.NewLoggerWhenNormalRun(false))
-	SetDefaultShutdown(NewShutdownWhenDefault(DefaultLogger().Logger, 0))
+	SetLogger(wlog.NewLoggerWhenNormalRun(false))
+	SetShutdown(NewShutdownWhenDefault(Logger().Logger, 0))
 }
 
 // Init initializes the necessary default global variables
@@ -19,7 +19,7 @@ func Init(conf *configs.Config) {
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	logger.SetStdDefaultLevel()
 	logger.SetStdDefaultLogger()
-	SetDefaultLogger(logger)
-	SetDefaultShutdown(NewShutdownWhenDefault(logger.Logger, 0))
+	SetLogger(logger)
+	SetShutdown(NewShutdownWhenDefault(logger.Logger, 0))
 	return
 }

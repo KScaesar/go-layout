@@ -8,10 +8,10 @@ import (
 
 var defaultLogger atomic.Pointer[wlog.Logger]
 
-func DefaultLogger() *wlog.Logger {
+func Logger() *wlog.Logger {
 	return defaultLogger.Load()
 }
 
-func SetDefaultLogger(logger *wlog.Logger) {
+func SetLogger(logger *wlog.Logger) {
 	defaultLogger.Store(logger)
 }

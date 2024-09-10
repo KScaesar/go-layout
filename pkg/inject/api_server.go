@@ -27,19 +27,19 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 			wgin.GinO11YTrace(conf.O11Y.EnableTrace),
 			wgin.GinO11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
 		).
-		Use(wgin.GinO11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.DefaultLogger())...).
+		Use(wgin.GinO11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.Logger())...).
 		Use(
 			utility.GinGormTransaction(db, []string{}),
 		)
 
-	router.GET("/logger/level", wgin.GinSetLoggerLevel(conf.Hack, pkg.DefaultLogger()))
+	router.GET("/logger/level", wgin.GinSetLoggerLevel(conf.Hack, pkg.Logger()))
 
 	v1 := router.Group("/api/v1")
 
 	v1.POST("/users", api.RegisterUser(svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
-	router.GET("", wgin.GinRoutes(router, conf.Hack, pkg.DefaultLogger()))
+	router.GET("", wgin.GinRoutes(router, conf.Hack, pkg.Logger()))
 	return router
 }
 
@@ -54,11 +54,11 @@ func ServeApiServer(port string, handler http.Handler) {
 	protocol := func() string { return "http" }
 
 	go func() {
-		pkg.DefaultLogger().Info("api start", slog.String("url", protocol()+"://0.0.0.0:"+port))
+		pkg.Logger().Info("api start", slog.String("url", protocol()+"://0.0.0.0:"+port))
 		err := server.ListenAndServe()
-		pkg.DefaultShutdown().Notify(err)
+		pkg.Shutdown().Notify(err)
 	}()
-	pkg.DefaultShutdown().AddPriorityShutdownAction(0, "api", func() error {
+	pkg.Shutdown().AddPriorityShutdownAction(0, "api", func() error {
 		return server.Shutdown(context.Background())
 	})
 }

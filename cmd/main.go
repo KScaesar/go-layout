@@ -14,18 +14,18 @@ import (
 func init() {
 	logger := wlog.NewLoggerWhenNormalRun(true)
 	logger.Logger = logger.With(slog.Any("version", pkg.Version()))
-	pkg.SetDefaultLogger(logger)
+	pkg.SetLogger(logger)
 }
 
 func main() {
 	var err error
 
-	conf := configs.MustLoadConfig("./configs/example.conf", pkg.DefaultLogger().Logger)
+	conf := configs.MustLoadConfig("./configs/example.conf", pkg.Logger().Logger)
 
 	// Init is required before get default global variables
 	pkg.Init(conf)
-	logger := pkg.DefaultLogger()
-	shutdown := pkg.DefaultShutdown()
+	logger := pkg.Logger()
+	shutdown := pkg.Shutdown()
 
 	go shutdown.Serve()
 	defer func() {
