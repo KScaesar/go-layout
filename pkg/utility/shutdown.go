@@ -126,6 +126,27 @@ func (s *Shutdown) WaitChannel() <-chan struct{} {
 }
 
 func (s *Shutdown) Serve() {
+	select {
+	case sig := <-s.osSig:
+		s.Logger.Info("recv os signal",
+			slog.String("trigger", "external"),
+			slog.Any("signal", sig),
+		)
+
+	case <-s.countdown.Done():
+		err := context.Cause(s.countdown)
+		if errors.Is(err, context.Canceled) {
+			s.Logger.Info("recv go context",
+				slog.String("trigger", "internal"),
+			)
+		} else {
+			s.Logger.Error("recv go context",
+				slog.String("trigger", "internal"),
+				slog.Any("err", err),
+			)
+		}
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -137,29 +158,7 @@ func (s *Shutdown) Serve() {
 
 	defer close(s.done)
 
-	logger := s.Logger
-	select {
-	case sig := <-s.osSig:
-		logger.Info("recv os signal",
-			slog.String("trigger", "external"),
-			slog.Any("signal", sig),
-		)
-
-	case <-s.countdown.Done():
-		err := context.Cause(s.countdown)
-		if errors.Is(err, context.Canceled) {
-			logger.Info("recv go context",
-				slog.String("trigger", "internal"),
-			)
-		} else {
-			logger.Error("recv go context",
-				slog.String("trigger", "internal"),
-				slog.Any("err", err),
-			)
-		}
-	}
-
-	logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
+	s.Logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
 	start := time.Now()
 
 	finish := make(chan struct{}, 1)
@@ -176,10 +175,10 @@ func (s *Shutdown) Serve() {
 	select {
 	case <-timeout:
 		duration := time.Since(start)
-		logger.Error("shutdown failed because timeout", slog.String("duration", duration.String()))
+		s.Logger.Error("shutdown failed because timeout", slog.String("duration", duration.String()))
 	case <-finish:
 		duration := time.Since(start)
-		logger.Info("shutdown finish", slog.String("duration", duration.String()))
+		s.Logger.Info("shutdown finish", slog.String("duration", duration.String()))
 	}
 }
 

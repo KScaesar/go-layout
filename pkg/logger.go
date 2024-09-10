@@ -3,15 +3,15 @@ package pkg
 import (
 	"sync/atomic"
 
-	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 )
 
-var defaultLogger atomic.Pointer[utility.WrapLogger]
+var defaultLogger atomic.Pointer[wlog.Logger]
 
-func DefaultLogger() *utility.WrapLogger {
+func DefaultLogger() *wlog.Logger {
 	return defaultLogger.Load()
 }
 
-func SetDefaultLogger(logger *utility.WrapLogger) {
+func SetDefaultLogger(logger *wlog.Logger) {
 	defaultLogger.Store(logger)
 }

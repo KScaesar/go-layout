@@ -5,14 +5,12 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 	"gopkg.in/yaml.v3"
 )
 
-func MustLoadConfig(filePath string) *Config {
-	logger := pkg.DefaultLogger().Logger
-
+func MustLoadConfig(filePath string, logger *slog.Logger) *Config {
 	conf, err := utility.LoadLocalConfigFromMultiSource[Config](
 		yaml.Unmarshal,
 		filePath,
@@ -36,8 +34,8 @@ type Config struct {
 	MySql MySql `yaml:"MySql"`
 	Redis Redis `yaml:"Redis"`
 
-	O11Y   utility.O11YConfig   `yaml:"O11Y"`
-	Logger utility.LoggerConfig `yaml:"Logger"`
+	O11Y   utility.O11YConfig `yaml:"O11Y"`
+	Logger wlog.LoggerConfig  `yaml:"Logger"`
 }
 
 func (c *Config) ServiceId() string {

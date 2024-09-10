@@ -18,7 +18,7 @@ func SetDefaultShutdown(shutdown *utility.Shutdown) {
 	defaultShutdown.Store(shutdown)
 }
 
-func NewShutdown(l *slog.Logger, waitSeconds int) *utility.Shutdown {
+func NewShutdownWhenInit(l *slog.Logger, waitSeconds int) *utility.Shutdown {
 	shutdown := utility.NewShutdown(context.Background(), waitSeconds)
 	shutdown.Logger = l
 	return shutdown
