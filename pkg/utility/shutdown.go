@@ -23,7 +23,7 @@ func EasyShutdownWithCtx(
 	component string,
 	stopAction func() error,
 ) {
-	NewShutdown(countdown, waitSeconds).
+	NewShutdown(countdown, waitSeconds, slog.Default()).
 		AddShutdownAction(component, stopAction).
 		Serve()
 }
@@ -40,17 +40,21 @@ func EasyShutdownWithCtx(
 //     Specifies the maximum number of seconds to wait for the shutdown process to complete.
 //     If this time elapses, the system will forcefully terminate regardless of the shutdown process's state.
 //     A value of 0 means it will wait indefinitely.
-func NewShutdown(countdown context.Context, waitSeconds int) *Shutdown {
+func NewShutdown(countdown context.Context, waitSeconds int, logger *slog.Logger) *Shutdown {
 	osSig := make(chan os.Signal, 2)
 	signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
 	ctx, cancel := context.WithCancelCause(countdown)
+
+	if logger == nil {
+		logger = slog.Default()
+	}
 
 	shutdown := &Shutdown{
 		osSig:     osSig,
 		countdown: ctx,
 		notify:    cancel,
 
-		Logger: slog.Default(), // 透過 std logger 的預設值, 簡化參數設定, 但可能和其他功能衝突
+		logger: logger,
 
 		waitSeconds: waitSeconds,
 		done:        make(chan struct{}),
@@ -71,7 +75,7 @@ type Shutdown struct {
 	waitSeconds int
 	done        chan struct{}
 
-	Logger *slog.Logger
+	logger *slog.Logger
 	mu     sync.Mutex
 
 	// The fields `names`, `actions` and `waitBlocked` use an array of size 3,
@@ -128,7 +132,7 @@ func (s *Shutdown) WaitChannel() <-chan struct{} {
 func (s *Shutdown) Serve() {
 	select {
 	case sig := <-s.osSig:
-		s.Logger.Info("recv os signal",
+		s.logger.Info("recv os signal",
 			slog.String("trigger", "external"),
 			slog.Any("signal", sig),
 		)
@@ -136,11 +140,11 @@ func (s *Shutdown) Serve() {
 	case <-s.countdown.Done():
 		err := context.Cause(s.countdown)
 		if errors.Is(err, context.Canceled) {
-			s.Logger.Info("recv go context",
+			s.logger.Info("recv go context",
 				slog.String("trigger", "internal"),
 			)
 		} else {
-			s.Logger.Error("recv go context",
+			s.logger.Error("recv go context",
 				slog.String("trigger", "internal"),
 				slog.Any("err", err),
 			)
@@ -158,7 +162,7 @@ func (s *Shutdown) Serve() {
 
 	defer close(s.done)
 
-	s.Logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
+	s.logger.Info("shutdown start", slog.Int("qty", s.actionsQty))
 	start := time.Now()
 
 	var timeout <-chan time.Time
@@ -175,10 +179,10 @@ func (s *Shutdown) Serve() {
 	select {
 	case <-timeout:
 		duration := time.Since(start)
-		s.Logger.Error("shutdown failed because timeout", slog.String("duration", duration.String()))
+		s.logger.Error("shutdown failed because timeout", slog.String("duration", duration.String()))
 	case <-finish:
 		duration := time.Since(start)
-		s.Logger.Info("shutdown finish", slog.String("duration", duration.String()))
+		s.logger.Info("shutdown finish", slog.String("duration", duration.String()))
 	}
 }
 
@@ -194,7 +198,7 @@ func (s *Shutdown) terminate() {
 			go func(number int) {
 				defer wg.Done()
 
-				logger := s.Logger.With(
+				logger := s.logger.With(
 					slog.Int("no.", number),
 					slog.Int("priority", priority),
 					slog.String("component", component),

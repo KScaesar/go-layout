@@ -3,6 +3,7 @@ package wlog
 import (
 	"io"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/lmittmann/tint"
@@ -68,6 +69,7 @@ func NewLogger(w io.Writer, conf *Config, formats ...FormatFunc) *Logger {
 }
 
 type Logger struct {
+	mu  sync.Mutex
 	lvl *slog.LevelVar
 	*slog.Logger
 }
@@ -84,7 +86,7 @@ func (l *Logger) CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
 	return v
 }
 
-func (l Logger) Level() slog.Level {
+func (l *Logger) Level() slog.Level {
 	return l.lvl.Level()
 }
 
@@ -92,10 +94,32 @@ func (l *Logger) SetLevel(lvl slog.Level) {
 	l.lvl.Set(lvl)
 }
 
-func (l Logger) SetStdDefaultLogger() {
+func (l *Logger) SetStdDefaultLevel() {
+	slog.SetLogLoggerLevel(l.lvl.Level())
+}
+
+// SetStdDefaultLogger
+// 將標準庫的預設值, 以我方的物件為基準, 控制 logger 行為
+func (l *Logger) SetStdDefaultLogger() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	slog.SetDefault(l.Logger)
 }
 
-func (l Logger) SetStdDefaultLevel() {
-	slog.SetLogLoggerLevel(l.lvl.Level())
+// PointToNew
+// 通過改變指標的指向, 讓所有引用此指標的其他元件獲得最新的狀態
+//
+// 以下是命名方式的分類
+//
+// 改變指標本身:
+// Replace, Set
+//
+// 改變指標的指向:
+// Redirect, PointTo
+func (l *Logger) PointToNew(new *Logger) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	*l.lvl = *(new.lvl)
+	*l.Logger = *(new.Logger)
 }

@@ -14,7 +14,7 @@ import (
 func init() {
 	logger := wlog.NewLoggerWhenNormalRun(true)
 	logger.Logger = logger.With(slog.Any("version", pkg.Version()))
-	pkg.SetLogger(logger)
+	pkg.Logger().PointToNew(logger)
 }
 
 func main() {
