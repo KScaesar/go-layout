@@ -21,9 +21,9 @@ func (hack Hack) value() string {
 	h, _ := strconv.Atoi(cipher[4:6])
 
 	key := string(hack)
-	const Hour int = 24
-	if len(key) < Hour {
-		key = "abcdefghijklmnopqrstuvwxyz"
+	const AlphabetSize int = 26
+	if len(key) <= AlphabetSize {
+		key = "abcdefghkjilmnopqrstuvwxyz"
 	}
 
 	char1 := key[h%m]
