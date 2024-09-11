@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -10,11 +11,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func MustLoadConfig(filePath string, logger *slog.Logger) *Config {
+func MustLoadConfig(logger *slog.Logger) *Config {
+	const defaultPath = "./configs/local.yml"
+
+	filePath := flag.String("conf", defaultPath, "Path to the configuration file")
+	flag.Parse()
+
 	conf, err := utility.LoadLocalConfigFromMultiSource[Config](
 		yaml.Unmarshal,
-		filePath,
-		"local.yml",
+		*filePath,
 		logger,
 	)
 	if err != nil {

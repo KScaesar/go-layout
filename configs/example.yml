@@ -2,7 +2,6 @@
 # default hostname
 ServiceId: ""
 
-# default today, format: YYYYMMDD
 Hack: ""
 
 Http:

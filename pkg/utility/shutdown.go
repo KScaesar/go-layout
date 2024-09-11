@@ -78,7 +78,7 @@ type Shutdown struct {
 	logger *slog.Logger
 	mu     sync.Mutex
 
-	// The fields `names`, `actions` and `waitBlocked` use an array of size 3,
+	// The fields `names`, `actions` use an array of size 3,
 	// representing three priority levels for shutdown process.
 	//
 	// priority 0 is the highest, and priority 2 is the lowest.

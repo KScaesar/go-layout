@@ -18,7 +18,7 @@ func init() {
 }
 
 func main() {
-	conf := configs.MustLoadConfig("./configs/example.conf", pkg.Logger().Logger)
+	conf := configs.MustLoadConfig(pkg.Logger().Logger)
 
 	// Init is required before get default global variables
 	pkg.Init(conf)

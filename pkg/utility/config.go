@@ -23,12 +23,10 @@ var ErrDecodeConf = errors.New("decode config")
 //
 // Parameters:
 // - decode: A function used to decode the content of the configuration file into an instance of type T.
-// - FilePath: The explicit path to the configuration file. If provided, it overwrites the default file name.
-// - defaultFileName: The default name of the configuration file to use if FilePath is not provided.
+// - FilePath: The explicit path to the configuration file.
 func LoadLocalConfigFromMultiSource[T any](
 	decode Unmarshal,
 	FilePath string,
-	defaultFileName string,
 	logger *slog.Logger,
 ) (
 	conf *T,
@@ -60,7 +58,7 @@ func LoadLocalConfigFromMultiSource[T any](
 
 	const DefaultEnvName = "CONF_PATH"
 
-	fileName := defaultFileName
+	fileName := ""
 	if FilePath != "" {
 		fileName = filepath.Base(FilePath)
 	}
@@ -96,7 +94,7 @@ func LoadLocalConfigFromMultiSource[T any](
 			continue
 		}
 
-		conf, err = LoadLocalConfig[T](decode, path)
+		conf, err = LoadLocalFile[T](decode, path)
 		if err == nil {
 			logger.Info("load config", slog.String("path", path))
 			return conf, nil
@@ -111,7 +109,7 @@ func LoadLocalConfigFromMultiSource[T any](
 	return nil, err
 }
 
-func LoadLocalConfig[T any](decode Unmarshal, FilePath string) (*T, error) {
+func LoadLocalFile[T any](decode Unmarshal, FilePath string) (*T, error) {
 	if FilePath == "" {
 		return nil, fmt.Errorf("FilePath cannot be empty")
 	}
