@@ -41,7 +41,7 @@ func newVersion() version {
 }
 
 type version struct {
-	ServiceName string `json:"name"`
+	ServiceName string `json:"svc"`
 	Commit      string `json:"commit"`
 	Release     string `json:"release"`
 	GoVersion   string `json:"go_version"`
