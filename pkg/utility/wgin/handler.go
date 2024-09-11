@@ -33,22 +33,34 @@ func GinRoutes(router *gin.Engine, hack utility.Hack, logger *wlog.Logger) gin.H
 	}
 }
 
-func GinSetLoggerLevel(hack utility.Hack, logger *wlog.Logger) gin.HandlerFunc {
+func GinSetLoggerLevel(hack utility.Hack, wlogger *wlog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if hack.Challenge(c.Query("hack_level")) {
-
-			switch c.Query("level") {
-			case "info":
-				logger.SetLevel(slog.LevelInfo)
-				logger.SetStdDefaultLevel()
-
-			case "debug":
-				logger.SetLevel(slog.LevelDebug)
-				logger.SetStdDefaultLevel()
-			}
-
-			c.JSON(http.StatusOK, gin.H{"level": logger.Level()})
+		if !hack.Challenge(c.Query("hack_level")) {
 			return
 		}
+
+		var update bool
+
+		switch c.Query("level") {
+		case "info":
+			wlogger.SetLevel(slog.LevelInfo)
+			wlogger.SetStdDefaultLevel()
+			update = true
+
+		case "debug":
+			wlogger.SetLevel(slog.LevelDebug)
+			wlogger.SetStdDefaultLevel()
+			update = true
+		}
+
+		logger := wlogger.CtxGetLogger(c.Request.Context())
+		lvl := wlogger.Level().String()
+		if update {
+			logger.Info("update logger level", slog.String("level", lvl))
+		} else {
+			logger.Info("get logger level", slog.String("level", lvl))
+		}
+
+		c.JSON(http.StatusOK, gin.H{"level": lvl})
 	}
 }

@@ -18,23 +18,21 @@ func init() {
 }
 
 func main() {
-	var err error
-
 	conf := configs.MustLoadConfig("./configs/example.conf", pkg.Logger().Logger)
 
 	// Init is required before get default global variables
 	pkg.Init(conf)
 	logger := pkg.Logger()
 	shutdown := pkg.Shutdown()
-
 	go shutdown.Serve()
+
+	var err error
 	defer func() {
-		if err == nil {
-			return
+		if err != nil {
+			shutdown.Notify(err)
+			<-shutdown.WaitChannel()
+			os.Exit(1)
 		}
-		shutdown.Notify(err)
-		<-shutdown.WaitChannel()
-		os.Exit(1)
 	}()
 
 	if err = utility.ServeObservability(

@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	SetShutdown((utility.NewShutdown(context.Background(), 0, Logger().Logger)))
+	defaultShutdown.Store(utility.NewShutdown(context.Background(), 0, Logger().Logger))
 }
 
 // Init initializes the necessary default global variables
@@ -20,8 +20,11 @@ func Init(conf *configs.Config) {
 	logger := wlog.NewLogger(os.Stdout, &conf.Logger, wlog.DefaultFormat()...)
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	Logger().PointToNew(logger)
+	Logger().SetStdDefaultLevel()
+	Logger().SetStdDefaultLogger()
 }
 
+// 透過函數情況, 不在以下討論的範圍
 // 大部分的情況不允許 pkg目錄 以外的程式碼
 // 去改變 default global variable (variable is pointer)
 //
@@ -40,6 +43,8 @@ var defaultLogger = wlog.NewLoggerWhenNormalRun(false)
 func Logger() *wlog.Logger {
 	return defaultLogger
 }
+
+//
 
 var defaultShutdown atomic.Pointer[utility.Shutdown]
 
