@@ -2,9 +2,12 @@ package wgin
 
 import (
 	"log/slog"
+	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
+	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,9 +16,10 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"gorm.io/gorm"
 )
 
-func GinO11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.HandlerFunc {
+func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.HandlerFunc {
 	var config sloggin.Config
 	config.WithRequestID = true
 
@@ -70,7 +74,7 @@ func GinO11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.Hand
 	}
 }
 
-func GinO11YTrace(enableTrace bool) func(c *gin.Context) {
+func O11YTrace(enableTrace bool) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		if !enableTrace {
 			c.Next()
@@ -90,7 +94,7 @@ func GinO11YTrace(enableTrace bool) func(c *gin.Context) {
 	}
 }
 
-func GinO11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
+func O11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
 	// https://github.com/prometheus/prometheus/tree/main/docs/querying
 	// https://github.com/slok/go-http-metrics/blob/master/metrics/prometheus/prometheus.go#L76-L99
 	// https://github.com/slok/go-http-metrics/blob/master/middleware/middleware.go#L98-L105
@@ -154,5 +158,59 @@ func GinO11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
 		}()
 
 		c.Next()
+	}
+}
+
+// GormTransaction
+//
+// 若 skipPaths 長度為 0，表示所有 path 都會使用 tx
+// 若 skipPaths 長度不為 0，表示 skipPaths 中的路徑將不會啟動 tx
+func GormTransaction(db *gorm.DB, skipPaths []string) gin.HandlerFunc {
+	skipMethods := map[string]bool{
+		http.MethodHead:    true,
+		http.MethodConnect: true,
+		http.MethodOptions: true,
+		http.MethodTrace:   true,
+
+		http.MethodGet:    false,
+		http.MethodPost:   false,
+		http.MethodPut:    false,
+		http.MethodPatch:  false,
+		http.MethodDelete: false,
+	}
+
+	return func(c *gin.Context) {
+		canSkip := db == nil ||
+			skipMethods[c.Request.Method] ||
+			(len(skipPaths) != 0 && slices.Contains(skipPaths, c.Request.URL.Path))
+
+		if canSkip {
+			c.Next()
+			return
+		}
+
+		tx := db.Begin()
+		err := tx.Error
+		if err != nil {
+			c.Error(err)
+			return
+		}
+
+		c.Request = c.Request.WithContext(utility.CtxWithGormTX(c.Request.Context(), db, tx))
+		c.Next()
+
+		if len(c.Errors) > 0 {
+			err := tx.Rollback().Error
+			if err != nil {
+
+			}
+			return
+		}
+
+		err = tx.Commit().Error
+		if err != nil {
+			c.Error(err)
+			return
+		}
 	}
 }

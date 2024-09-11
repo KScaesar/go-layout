@@ -9,7 +9,6 @@ import (
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters/api"
-	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wgin"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -24,22 +23,22 @@ func NewHttpMux(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 	router.
 		Use(
 			gin.Recovery(),
-			wgin.GinO11YTrace(conf.O11Y.EnableTrace),
-			wgin.GinO11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
+			wgin.O11YTrace(conf.O11Y.EnableTrace),
+			wgin.O11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
 		).
-		Use(wgin.GinO11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.Logger())...).
+		Use(wgin.O11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.Logger())...).
 		Use(
-			utility.GinGormTransaction(db, []string{}),
+			wgin.GormTransaction(db, []string{}),
 		)
 
-	router.GET("/logger/level", wgin.GinSetLoggerLevel(conf.Hack, pkg.Logger()))
+	router.GET("/logger/level", wgin.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
 
 	v1 := router.Group("/api/v1")
 
 	v1.POST("/users", api.RegisterUser(svc.UserService))
 	v1.GET("/users", api.QueryMultiUser(svc.UserService))
 
-	router.GET("", wgin.GinRoutes(router, conf.Hack, pkg.Logger()))
+	router.GET("", wgin.ShowRoutes(router, conf.Hack, pkg.Logger()))
 	return router
 }
 

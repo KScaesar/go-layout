@@ -2,10 +2,7 @@ package utility
 
 import (
 	"context"
-	"net/http"
-	"slices"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -81,60 +78,4 @@ func (g *gormTX) Commit(ctxTX context.Context) error {
 
 func (g *gormTX) Rollback(ctxTX context.Context) error {
 	return CtxGetGormTX(ctxTX, g.db).Rollback().Error
-}
-
-//
-
-// GinGormTransaction
-//
-// 若 skipPaths 長度為 0，表示所有 path 都會使用 tx
-// 若 skipPaths 長度不為 0，表示 skipPaths 中的路徑將不會啟動 tx
-func GinGormTransaction(db *gorm.DB, skipPaths []string) gin.HandlerFunc {
-	skipMethods := map[string]bool{
-		http.MethodHead:    true,
-		http.MethodConnect: true,
-		http.MethodOptions: true,
-		http.MethodTrace:   true,
-
-		http.MethodGet:    false,
-		http.MethodPost:   false,
-		http.MethodPut:    false,
-		http.MethodPatch:  false,
-		http.MethodDelete: false,
-	}
-
-	return func(c *gin.Context) {
-		canSkip := db == nil ||
-			skipMethods[c.Request.Method] ||
-			(len(skipPaths) != 0 && slices.Contains(skipPaths, c.Request.URL.Path))
-
-		if canSkip {
-			c.Next()
-			return
-		}
-
-		tx := db.Begin()
-		err := tx.Error
-		if err != nil {
-			c.Error(err)
-			return
-		}
-
-		c.Request = c.Request.WithContext(CtxWithGormTX(c.Request.Context(), db, tx))
-		c.Next()
-
-		if len(c.Errors) > 0 {
-			err := tx.Rollback().Error
-			if err != nil {
-
-			}
-			return
-		}
-
-		err = tx.Commit().Error
-		if err != nil {
-			c.Error(err)
-			return
-		}
-	}
 }

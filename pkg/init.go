@@ -24,9 +24,9 @@ func Init(conf *configs.Config) {
 	Logger().SetStdDefaultLogger()
 }
 
-// 透過函數情況, 不在以下討論的範圍
 // 大部分的情況不允許 pkg目錄 以外的程式碼
 // 去改變 default global variable (variable is pointer)
+// 透過函數存取物件情況, 不在以上討論的範圍
 //
 // 想清楚使用情境 (use case) 到底要修改 pointer 本身 or 修改 pointer to 物件
 // 比如以下兩個例子, 根據情境, 體現不同物件的設計方式, 所採用的做法不同
