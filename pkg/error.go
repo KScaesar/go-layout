@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/KScaesar/go-layout/pkg/utility"
@@ -8,9 +9,20 @@ import (
 
 var ErrorRegistry = utility.NewErrorRegistry()
 
+func ErrorUnwrap(err error) (myErr *utility.CustomError) {
+	if errors.As(err, &myErr) {
+		return myErr
+	}
+	return ErrUndefined.(*utility.CustomError)
+}
+
+const (
+	ErrCodeUndefined = -1
+)
+
 var (
 	ErrUndefined = ErrorRegistry.
-			Register(-1).
+			Register(ErrCodeUndefined).
 			HttpStatus(http.StatusInternalServerError).
 			Description("undefined error").
 			Error()

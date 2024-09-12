@@ -6,6 +6,7 @@ import (
 
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
+	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
 
 	"github.com/gofiber/fiber/v2"
@@ -34,7 +35,7 @@ func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App 
 	)
 
 	// 為了利用 fiber.DefaultErrorHandler, 讓 o11y mw 保證可以讀取到 http status code, 所以分為 router, root
-	root := fiber.New(fiber.Config{ErrorHandler: fiber.DefaultErrorHandler})
+	root := fiber.New(fiber.Config{ErrorHandler: adapters.FiberErrorHandler})
 	router.Mount("", root)
 
 	root.Use(

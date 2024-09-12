@@ -1,9 +1,5 @@
 package utility
 
-import (
-	"errors"
-)
-
 func NewErrorRegistry() *ErrorRegistry {
 	return &ErrorRegistry{
 		customCodeChecker: make(map[int]bool),
@@ -75,13 +71,4 @@ func (b *CustomError) CustomCode() int {
 
 func (b *CustomError) HttpStatus() int {
 	return b.httpStatus
-}
-
-//
-
-func ErrorUnwrap(err error) (myErr *CustomError) {
-	if errors.As(err, &myErr) {
-		return myErr
-	}
-	return nil
 }
