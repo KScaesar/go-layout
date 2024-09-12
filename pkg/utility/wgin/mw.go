@@ -3,7 +3,6 @@ package wgin
 import (
 	"log/slog"
 	"net/http"
-	"slices"
 	"strconv"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.HandlerFunc {
+func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerFunc, gin.HandlerFunc) {
 	var config sloggin.Config
 	config.WithRequestID = true
 
@@ -38,45 +37,48 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) []gin.Handler
 		config.WithTraceID = true
 		config.WithSpanID = true
 	}
-
 	sloggin.RequestIDKey = "req_id"
 
-	return []gin.HandlerFunc{
-		sloggin.NewWithConfig(Logger.Logger, config),
+	h1 := sloggin.NewWithConfig(Logger.Logger, config)
 
-		func(c *gin.Context) {
-			ctx := c.Request.Context()
+	h2 := func(c *gin.Context) {
+		ctx := c.Request.Context()
 
-			reqId := c.Writer.Header().Get(sloggin.RequestIDHeaderKey)
-			requestAttributes := []slog.Attr{
-				slog.String("method", c.Request.Method),
-				slog.String("path", c.Request.URL.Path),
-			}
-			logger := Logger.With(
-				slog.Any("request", slog.GroupValue(requestAttributes...)),
-				slog.String(sloggin.RequestIDKey, reqId),
+		reqId := c.Writer.Header().Get(sloggin.RequestIDHeaderKey)
+		requestAttributes := []slog.Attr{
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.Request.URL.Path),
+		}
+		logger := Logger.With(
+			slog.Any("request", slog.GroupValue(requestAttributes...)),
+			slog.String(sloggin.RequestIDKey, reqId),
+		)
+
+		if enableTrace {
+			span := trace.SpanFromContext(ctx)
+			traceId := span.SpanContext().TraceID().String()
+			spanId := span.SpanContext().SpanID().String()
+
+			logger = logger.With(
+				slog.String(sloggin.TraceIDKey, traceId),
+				slog.String(sloggin.SpanIDKey, spanId),
 			)
+		}
 
-			if enableTrace {
-				span := trace.SpanFromContext(ctx)
-				traceId := span.SpanContext().TraceID().String()
-				spanId := span.SpanContext().SpanID().String()
-
-				logger = logger.With(
-					slog.String(sloggin.TraceIDKey, traceId),
-					slog.String(sloggin.SpanIDKey, spanId),
-				)
-			}
-
-			c.Request = c.Request.WithContext(Logger.CtxWithLogger(ctx, logger))
-			c.Next()
-		},
+		c.Request = c.Request.WithContext(Logger.CtxWithLogger(ctx, logger))
+		c.Next()
 	}
+	return h1, h2
 }
 
 func O11YTrace(enableTrace bool) func(c *gin.Context) {
+	skipMethods := map[string]bool{
+		http.MethodHead:    true,
+		http.MethodConnect: true,
+		http.MethodOptions: true,
+	}
 	return func(c *gin.Context) {
-		if !enableTrace {
+		if !enableTrace || skipMethods[c.Request.Method] {
 			c.Next()
 			return
 		}
@@ -129,7 +131,16 @@ func O11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
 		Help:      "The number of inflight requests being handled at the same time",
 	}, []string{"method", "handler"})
 
+	skipMethods := map[string]bool{
+		http.MethodHead:    true,
+		http.MethodConnect: true,
+		http.MethodOptions: true,
+	}
 	return func(c *gin.Context) {
+		if !enableTrace || skipMethods[c.Request.Method] {
+			c.Next()
+			return
+		}
 
 		var traceValues []string
 		if enableTrace {
@@ -161,55 +172,55 @@ func O11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
 	}
 }
 
-// GormTransaction
+// GormTX
 //
-// 若 skipPaths 長度為 0，表示所有 path 都會使用 tx
-// 若 skipPaths 長度不為 0，表示 skipPaths 中的路徑將不會啟動 tx
-func GormTransaction(db *gorm.DB, skipPaths []string) gin.HandlerFunc {
+// 若 skip == nil, 所有條件都會使用 tx
+// 若 skip != nil, 滿足條件的, 將不會啟動 tx
+func GormTX(db *gorm.DB, skip func(ctx *gin.Context) bool, wlogger *wlog.Logger) gin.HandlerFunc {
 	skipMethods := map[string]bool{
 		http.MethodHead:    true,
 		http.MethodConnect: true,
 		http.MethodOptions: true,
 		http.MethodTrace:   true,
-
-		http.MethodGet:    false,
-		http.MethodPost:   false,
-		http.MethodPut:    false,
-		http.MethodPatch:  false,
-		http.MethodDelete: false,
 	}
 
 	return func(c *gin.Context) {
 		canSkip := db == nil ||
 			skipMethods[c.Request.Method] ||
-			(len(skipPaths) != 0 && slices.Contains(skipPaths, c.Request.URL.Path))
+			(skip != nil && skip(c))
 
 		if canSkip {
 			c.Next()
 			return
 		}
 
+		stdCtx := c.Request.Context()
+		logger := wlogger.CtxGetLogger(stdCtx)
+
 		tx := db.Begin()
 		err := tx.Error
 		if err != nil {
+			logger.Error("gorm tx begin failed", "err", err)
 			c.Error(err)
 			return
 		}
 
-		c.Request = c.Request.WithContext(utility.CtxWithGormTX(c.Request.Context(), db, tx))
+		c.Request = c.Request.WithContext(utility.CtxWithGormTX(stdCtx, db, tx))
+
 		c.Next()
 
 		if len(c.Errors) > 0 {
-			err := tx.Rollback().Error
-			if err != nil {
-
+			Err := tx.Rollback().Error
+			if Err != nil {
+				logger.Error("gorm tx rollback failed", "err", Err)
 			}
 			return
 		}
 
-		err = tx.Commit().Error
-		if err != nil {
-			c.Error(err)
+		Err := tx.Commit().Error
+		if Err != nil {
+			logger.Error("gorm tx commit failed", "err", Err)
+			c.Error(Err)
 			return
 		}
 	}

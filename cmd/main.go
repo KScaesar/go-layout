@@ -53,8 +53,8 @@ func main() {
 	}
 
 	svc := inject.NewService(conf, infra)
-	mux := inject.NewHttpMux(conf, infra.MySql, svc)
-	inject.ServeApiServer(conf.Http.Port, mux)
+	mux := inject.NewGinRouter(conf, infra.MySql, svc)
+	inject.ServeGin(conf.Http.Port, mux)
 
 	<-shutdown.WaitChannel()
 }
