@@ -7,6 +7,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/felixge/fgprof"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -71,12 +72,15 @@ func ServeObservability(
 	// custom pprof
 	// https://pkg.go.dev/runtime/pprof#Profile
 
+	http.Handle("/debug/fgprof", fgprof.Handler())
+
 	// metric
 	http.Handle("/metrics", promhttp.Handler())
 
 	server := &http.Server{Addr: "0.0.0.0:" + conf.Port, Handler: http.DefaultServeMux}
 	go func() {
 		logger.Info("pprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/pprof"))
+		logger.Info("fgprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/fgprof?seconds=1"))
 		logger.Info("metric start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/metrics"))
 		err := server.ListenAndServe()
 		shutdown.Notify(err)

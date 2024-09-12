@@ -3,6 +3,7 @@ module github.com/KScaesar/go-layout
 go 1.23.1
 
 require (
+	github.com/felixge/fgprof v0.9.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/google/wire v0.6.0
@@ -44,6 +45,7 @@ require (
 	github.com/go-playground/validator/v10 v10.22.0 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/google/pprof v0.0.0-20240227163752-401108e1b7e7 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
