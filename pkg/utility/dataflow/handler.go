@@ -5,6 +5,8 @@ import (
 	"runtime/debug"
 )
 
+type ErrorHandleFunc func(message *Message, dep any, err error) error
+
 type HandleFunc func(message *Message, dep any) error
 
 func (h HandleFunc) PreMiddleware() Middleware {
