@@ -22,35 +22,35 @@ const (
 
 var (
 	ErrUndefined = ErrorRegistry.
-			Register(ErrCodeUndefined).
-			HttpStatus(http.StatusInternalServerError).
+			AddErrorCode(ErrCodeUndefined).
 			Description("undefined error").
-			Error()
+			HttpStatus(http.StatusInternalServerError).
+			NewError()
 
 	ErrInvalidParam = ErrorRegistry.
-			Register(4000).
-			HttpStatus(http.StatusBadRequest).
+			AddErrorCode(4000).
 			Description("invalid parameter").
-			Error()
+			HttpStatus(http.StatusBadRequest).
+			NewError()
 	ErrExists = ErrorRegistry.
-			Register(4001).
-			HttpStatus(http.StatusConflict).
+			AddErrorCode(4001).
 			Description("resource already existed").
-			Error()
+			HttpStatus(http.StatusConflict).
+			NewError()
 	ErrNotExists = ErrorRegistry.
-			Register(4002).
-			HttpStatus(http.StatusNotFound).
+			AddErrorCode(4002).
 			Description("resource doesn't exist").
-			Error()
+			HttpStatus(http.StatusNotFound).
+			NewError()
 
 	ErrSystem = ErrorRegistry.
-			Register(5000).
-			HttpStatus(http.StatusInternalServerError).
+			AddErrorCode(5000).
 			Description("system issue").
-			Error()
-	ErrDatabase = ErrorRegistry.
-			Register(5001).
 			HttpStatus(http.StatusInternalServerError).
+			NewError()
+	ErrDatabase = ErrorRegistry.
+			AddErrorCode(5001).
 			Description("database issue").
-			Error()
+			HttpStatus(http.StatusInternalServerError).
+			NewError()
 )

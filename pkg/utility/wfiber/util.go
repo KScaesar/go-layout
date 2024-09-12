@@ -10,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func PrintRegisteredRoute(router *fiber.App) {
+func ShowRoutes(router *fiber.App) {
 	out := make([]string, 0, 10)
 
 	out = append(out, "")

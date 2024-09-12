@@ -50,7 +50,7 @@ func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App 
 func ServeFiber(port string, debug bool, router *fiber.App) {
 	router.Hooks().OnListen(func(_ fiber.ListenData) error {
 		if debug {
-			wfiber.PrintRegisteredRoute(router)
+			wfiber.ShowRoutes(router)
 		}
 		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		return nil

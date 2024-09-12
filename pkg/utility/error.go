@@ -1,36 +1,69 @@
 package utility
 
+import (
+	"fmt"
+	"slices"
+	"strconv"
+	"strings"
+)
+
 func NewErrorRegistry() *ErrorRegistry {
 	return &ErrorRegistry{
-		customCodeChecker: make(map[int]bool),
-		errors:            make(map[int]*CustomError),
+		errCodeMap:   make(map[string]error),
+		errCodeSlice: make([]string, 0),
 	}
 }
 
 type ErrorRegistry struct {
-	customCodeChecker map[int]bool
-	errors            map[int]*CustomError
-	target            *CustomError
+	errCodeMap   map[string]error
+	errCodeSlice []string
+
+	target *CustomError
 }
 
-func (r *ErrorRegistry) Register(customCode int) *ErrorRegistry {
-	if r.target != nil {
-		panic("The error registry call sequence is incorrect. It must start with Register and end with Error.")
+func (r *ErrorRegistry) ShowErrors() {
+	slices.SortFunc(r.errCodeSlice, strings.Compare)
+
+	texts := make([]string, 0, len(r.errCodeSlice)+2)
+
+	texts = append(texts, "")
+	for _, errCode := range r.errCodeSlice {
+		text := fmt.Sprintf(" [ErrCode] %-8s: %s", errCode, r.errCodeMap[errCode].Error())
+		texts = append(texts, text)
 	}
-	if r.customCodeChecker[customCode] {
+	texts = append(texts, "")
+
+	fmt.Println(strings.Join(texts, "\n"))
+}
+
+func (r *ErrorRegistry) AddError(errCode int, err error) error {
+	return r.AddErrorCode(errCode).
+		Description(err.Error()).
+		NewError()
+}
+
+func (r *ErrorRegistry) AddErrorCode(errCode int) *ErrorRegistry {
+	if r.target != nil {
+		panic("The error registry call sequence is incorrect. It must start with AddErrorCode and end with NewError.")
+	}
+
+	myCode := strconv.Itoa(errCode)
+	_, exist := r.errCodeMap[myCode]
+	if exist {
 		panic("duplicated custom code")
 	}
 
-	r.customCodeChecker[customCode] = true
-	err := &CustomError{customCode: customCode}
-	r.errors[err.customCode] = err
+	err := &CustomError{errCode: errCode}
+	r.errCodeMap[myCode] = err
+	r.errCodeSlice = append(r.errCodeSlice, myCode)
+
 	r.target = err
 	return r
 }
 
 func (r *ErrorRegistry) HttpStatus(httpStatus int) *ErrorRegistry {
 	if r.target == nil {
-		panic("The error registry call sequence is incorrect. It must start with Register and end with Error.")
+		panic("The error registry call sequence is incorrect. It must start with AddErrorCode and end with NewError.")
 	}
 	r.target.httpStatus = httpStatus
 	return r
@@ -38,15 +71,15 @@ func (r *ErrorRegistry) HttpStatus(httpStatus int) *ErrorRegistry {
 
 func (r *ErrorRegistry) Description(description string) *ErrorRegistry {
 	if r.target == nil {
-		panic("The error registry call sequence is incorrect. It must start with Register and end with Error.")
+		panic("The error registry call sequence is incorrect. It must start with AddErrorCode and end with NewError.")
 	}
 	r.target.description = description
 	return r
 }
 
-func (r *ErrorRegistry) Error() error {
+func (r *ErrorRegistry) NewError() error {
 	if r.target == nil {
-		panic("The error registry call sequence is incorrect. It must start with Register and end with Error.")
+		panic("The error registry call sequence is incorrect. It must start with AddErrorCode and end with NewError.")
 	}
 	err := r.target
 	r.target = nil
@@ -56,19 +89,19 @@ func (r *ErrorRegistry) Error() error {
 //
 
 type CustomError struct {
-	customCode  int
+	errCode     int
 	httpStatus  int
 	description string
 }
 
-func (b *CustomError) Error() string {
-	return b.description
+func (c *CustomError) Error() string {
+	return c.description
 }
 
-func (b *CustomError) CustomCode() int {
-	return b.customCode
+func (c *CustomError) ErrorCode() int {
+	return c.errCode
 }
 
-func (b *CustomError) HttpStatus() int {
-	return b.httpStatus
+func (c *CustomError) HttpStatus() int {
+	return c.httpStatus
 }
