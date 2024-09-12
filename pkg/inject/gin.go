@@ -15,12 +15,12 @@ import (
 )
 
 func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
-	if !conf.Http.GinDebug {
+	if !conf.Http.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
 
-	o11yLogger1, o11yLogger2 := wgin.O11YLogger(conf.Http.GinDebug, conf.O11Y.EnableTrace, pkg.Logger())
+	o11yLogger1, o11yLogger2 := wgin.O11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.Logger())
 	router.Use(
 		gin.Recovery(),
 		wgin.O11YTrace(conf.O11Y.EnableTrace),

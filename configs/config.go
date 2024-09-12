@@ -54,8 +54,8 @@ func (c *Config) ServiceId() string {
 }
 
 type Http struct {
-	Port     string `yaml:"Port"`
-	GinDebug bool   `yaml:"GinDebug"`
+	Port  string `yaml:"Port"`
+	Debug bool   `yaml:"Debug"`
 }
 
 type MySql struct {

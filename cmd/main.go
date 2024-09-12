@@ -26,6 +26,8 @@ func main() {
 	shutdown := pkg.Shutdown()
 	go shutdown.Serve()
 
+	logger.Debug("print config", slog.Any("conf", conf))
+
 	var err error
 	defer func() {
 		if err != nil {

@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"reflect"
 )
 
 var ErrDecodeConf = errors.New("decode config")
@@ -36,17 +35,6 @@ func LoadLocalConfigFromMultiSource[T any](
 	if logger == nil {
 		logger = slog.Default()
 	}
-
-	defer func() {
-		if err != nil {
-			return
-		}
-
-		var zero T
-		if reflect.DeepEqual(*conf, zero) {
-			err = errors.New("load zero value config")
-		}
-	}()
 
 	const (
 		byNormal int = iota + 1

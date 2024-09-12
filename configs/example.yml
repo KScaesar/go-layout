@@ -7,8 +7,8 @@ Hack: ""
 Http:
   Port: 8800
 
-  # if GinDebug is false, enable gin.ReleaseMode
-  GinDebug: true
+  # if Debug is false, enable gin.ReleaseMode
+  Debug: false
 
 MySql:
   User: root
