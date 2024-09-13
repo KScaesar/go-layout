@@ -55,3 +55,11 @@ func Shutdown() *utility.Shutdown {
 func SetShutdown(s *utility.Shutdown) {
 	defaultShutdown.Store(s)
 }
+
+//
+
+var defaultErrorRegistry = utility.NewErrorRegistry()
+
+func ErrorRegistry() *utility.ErrorRegistry {
+	return defaultErrorRegistry
+}
