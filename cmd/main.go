@@ -27,7 +27,7 @@ func main() {
 	go shutdown.Serve()
 
 	logger.Debug("show config", slog.Any("conf", conf))
-	// pkg.ErrorRegistry.ShowErrors()
+	pkg.ErrorRegistry().ShowErrors()
 
 	var err error
 	defer func() {

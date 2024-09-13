@@ -7,7 +7,11 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
-var ErrorRegistry = utility.NewErrorRegistry()
+var defaultErrorRegistry = utility.NewErrorRegistry()
+
+func ErrorRegistry() *utility.ErrorRegistry {
+	return defaultErrorRegistry
+}
 
 func ErrorUnwrap(err error) (myErr *utility.CustomError) {
 	if errors.As(err, &myErr) {
@@ -21,34 +25,34 @@ const (
 )
 
 var (
-	ErrUndefined = ErrorRegistry.
+	ErrUndefined = defaultErrorRegistry.
 			AddErrorCode(ErrCodeUndefined).
 			Description("undefined error").
 			HttpStatus(http.StatusInternalServerError).
 			NewError()
 
-	ErrInvalidParam = ErrorRegistry.
+	ErrInvalidParam = defaultErrorRegistry.
 			AddErrorCode(4000).
 			Description("invalid parameter").
 			HttpStatus(http.StatusBadRequest).
 			NewError()
-	ErrExists = ErrorRegistry.
+	ErrExists = defaultErrorRegistry.
 			AddErrorCode(4001).
 			Description("resource already existed").
 			HttpStatus(http.StatusConflict).
 			NewError()
-	ErrNotExists = ErrorRegistry.
+	ErrNotExists = defaultErrorRegistry.
 			AddErrorCode(4002).
 			Description("resource doesn't exist").
 			HttpStatus(http.StatusNotFound).
 			NewError()
 
-	ErrSystem = ErrorRegistry.
+	ErrSystem = defaultErrorRegistry.
 			AddErrorCode(5000).
 			Description("system issue").
 			HttpStatus(http.StatusInternalServerError).
 			NewError()
-	ErrDatabase = ErrorRegistry.
+	ErrDatabase = defaultErrorRegistry.
 			AddErrorCode(5001).
 			Description("database issue").
 			HttpStatus(http.StatusInternalServerError).
