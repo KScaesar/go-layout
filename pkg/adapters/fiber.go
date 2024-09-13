@@ -1,6 +1,8 @@
 package adapters
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/KScaesar/go-layout/pkg"
@@ -8,14 +10,35 @@ import (
 )
 
 func FiberErrorHandler(c *fiber.Ctx, err error) error {
-	if err == nil {
-		return nil
+SendCustomError:
+	myErr := pkg.ErrorUnwrap(err)
+	if myErr.ErrorCode() != pkg.ErrCodeUndefined {
+		return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
 	}
 
-	myErr := pkg.ErrorUnwrap(err)
-	if myErr.ErrorCode() == pkg.ErrCodeUndefined {
-		pkg.Logger().CtxGetLogger(c.UserContext()).
-			Warn("capture undefined error", slog.Any("err", err))
+	isFixed, Err := fixUndefinedError(err)
+	if isFixed {
+		err = Err
+		goto SendCustomError
 	}
-	return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err})
+
+	pkg.Logger().CtxGetLogger(c.UserContext()).
+		Warn("capture undefined error",
+			slog.Any("err", err),
+		)
+	return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
+}
+
+func fixUndefinedError(err error) (isFixed bool, Err error) {
+	var fiberErr *fiber.Error
+
+	switch {
+	case errors.As(err, &fiberErr):
+		switch fiberErr.Code {
+		case fiber.StatusNotFound:
+			return true, fmt.Errorf("%w: %w", pkg.ErrNotExists, err)
+		}
+	}
+
+	return false, err
 }

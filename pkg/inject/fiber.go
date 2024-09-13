@@ -20,7 +20,6 @@ func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App 
 		ErrorHandler:          fiber.DefaultErrorHandler,
 		AppName:               pkg.Version().ServiceName,
 		DisableStartupMessage: true,
-		ReadTimeout:           10 * time.Second,
 		WriteTimeout:          1 * time.Minute,
 	})
 
