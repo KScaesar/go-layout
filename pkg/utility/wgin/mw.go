@@ -83,13 +83,13 @@ func O11YTrace(enableTrace bool) func(c *gin.Context) {
 			return
 		}
 
-		ctx, span := otel.Tracer("").Start(c.Request.Context(), "")
+		ctx, span := otel.Tracer("").Start(c.Request.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
 		c.Request = c.Request.WithContext(ctx)
 		defer span.End()
 
 		span.SetAttributes(
 			attribute.String("http.method", c.Request.Method),
-			attribute.String("http.path", c.Request.URL.Path),
+			attribute.String("http.path", c.FullPath()),
 		)
 
 		c.Next()
@@ -151,7 +151,7 @@ func O11YMetric(svcName string, enableTrace bool) func(c *gin.Context) {
 		}
 
 		method := c.Request.Method
-		handler := c.Request.URL.Path
+		handler := c.FullPath()
 
 		HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
 		start := time.Now()

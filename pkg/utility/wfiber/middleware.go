@@ -32,13 +32,13 @@ func O11YTrace(enableTrace bool) fiber.Handler {
 			return c.Next()
 		}
 
-		ctx, span := otel.Tracer("").Start(c.Context(), "")
+		ctx, span := otel.Tracer("").Start(c.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
 		c.SetUserContext(ctx)
 		defer span.End()
 
 		span.SetAttributes(
 			attribute.String("http.method", string(c.Context().Method())),
-			attribute.String("http.path", c.Path()),
+			attribute.String("http.path", c.Route().Path),
 		)
 
 		return c.Next()
@@ -100,7 +100,7 @@ func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
 		}
 
 		method := c.Method()
-		handler := c.Path()
+		handler := c.Route().Path
 
 		HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
 		start := time.Now()
