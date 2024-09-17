@@ -28,7 +28,7 @@ func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App 
 		recover.New(),
 		cors.New(),
 		wfiber.O11YTrace(conf.O11Y.EnableTrace),
-		wfiber.O11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
+		wfiber.O11YMetric(pkg.Version().ServiceName),
 		o11yLogger1,
 		o11yLogger2,
 	)

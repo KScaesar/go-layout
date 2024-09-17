@@ -45,16 +45,11 @@ func O11YTrace(enableTrace bool) fiber.Handler {
 	}
 }
 
-func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
+func O11YMetric(svcName string) fiber.Handler {
 	// https://github.com/prometheus/prometheus/tree/main/docs/querying
 	// https://github.com/slok/go-http-metrics/blob/master/metrics/prometheus/prometheus.go#L76-L99
 	// https://github.com/slok/go-http-metrics/blob/master/middleware/middleware.go#L98-L105
 	// https://github.com/brancz/prometheus-example-app
-
-	var traceKeys []string
-	if enableTrace {
-		traceKeys = []string{"trace_id", "span_id"}
-	}
 
 	// Throughput, Error Rate
 	HttpRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
@@ -62,7 +57,7 @@ func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
 		Subsystem: "http",
 		Name:      "requests_total",
 		Help:      "Total number of HTTP requests",
-	}, append([]string{"code", "method", "handler"}, traceKeys...))
+	}, []string{"code", "method", "handler"})
 
 	// Latency
 	HttpResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -71,7 +66,7 @@ func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
 		Name:      "request_duration_seconds",
 		Help:      "Histogram of response time for HTTP in seconds",
 		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
-	}, append([]string{"code", "method", "handler"}, traceKeys...))
+	}, []string{"code", "method", "handler"})
 
 	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: svcName,
@@ -91,13 +86,9 @@ func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
 			return c.Next()
 		}
 
-		var traceValues []string
-		if enableTrace {
-			span := trace.SpanFromContext(c.UserContext())
-			traceID := span.SpanContext().TraceID().String()
-			spanID := span.SpanContext().SpanID().String()
-			traceValues = []string{traceID, spanID}
-		}
+		span := trace.SpanFromContext(c.UserContext())
+		traceId := span.SpanContext().TraceID()
+		spanId := span.SpanContext().SpanID()
 
 		method := c.Method()
 		handler := c.Route().Path
@@ -109,12 +100,18 @@ func O11YMetric(svcName string, enableTrace bool) fiber.Handler {
 			HttpRequestsInflight.WithLabelValues(method, handler).Add(-1)
 
 			code := strconv.Itoa(c.Response().StatusCode())
+			labels := []string{code, method, handler}
+			HttpRequestsTotal.WithLabelValues(labels...).Inc()
 
-			values := append(make([]string, 0, 5), code, method, handler)
-			values = append(values, traceValues...)
-
-			HttpRequestsTotal.WithLabelValues(values...).Inc()
-			HttpResponseSecond.WithLabelValues(values...).Observe(duration)
+			if traceId.IsValid() && spanId.IsValid() {
+				traceLabels := prometheus.Labels{
+					"trace_id": traceId.String(),
+					"span_id":  spanId.String(),
+				}
+				HttpResponseSecond.WithLabelValues(labels...).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
+			} else {
+				HttpResponseSecond.WithLabelValues(labels...).Observe(duration)
+			}
 		}()
 
 		return c.Next()

@@ -24,7 +24,7 @@ func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 	router.Use(
 		gin.Recovery(),
 		wgin.O11YTrace(conf.O11Y.EnableTrace),
-		wgin.O11YMetric(pkg.Version().ServiceName, conf.O11Y.EnableTrace),
+		wgin.O11YMetric(pkg.Version().ServiceName),
 		o11yLogger1,
 		o11yLogger2,
 		wgin.GormTX(db, nil, pkg.Logger()),

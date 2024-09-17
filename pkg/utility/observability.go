@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/felixge/fgprof"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -75,7 +76,7 @@ func ServeObservability(
 	http.Handle("/debug/fgprof", fgprof.Handler())
 
 	// metric
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{EnableOpenMetrics: true}))
 
 	server := &http.Server{Addr: "0.0.0.0:" + conf.Port, Handler: http.DefaultServeMux}
 	go func() {
