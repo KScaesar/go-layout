@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
@@ -30,7 +29,7 @@ func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 		wgin.GormTX(db, nil, pkg.Logger()),
 	)
 
-	router.GET("/", api.Hello(conf.Hack))
+	router.GET("/", api.HelloGin(conf.Hack))
 	router.GET("/logger/level", wgin.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
 
 	v1 := router.Group("/api/v1")
@@ -43,10 +42,8 @@ func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 
 func ServeGin(port string, handler http.Handler) {
 	server := &http.Server{
-		Addr:         "0.0.0.0:" + port,
-		Handler:      handler,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		Addr:    "0.0.0.0:" + port,
+		Handler: handler,
 	}
 
 	go func() {

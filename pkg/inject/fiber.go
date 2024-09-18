@@ -2,11 +2,11 @@ package inject
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
+	"github.com/KScaesar/go-layout/pkg/adapters/api"
 	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,33 +15,37 @@ import (
 	"gorm.io/gorm"
 )
 
+// NewFiberRouter
+// 由於 fiber 本身的限制, error handler 必須分為兩個部分來處理
+//
+// 1. fiber 本身的錯誤:
+// 比如 api route 找不到, 依靠 config.ErrorHandler 進行處理
+//
+// 2. 商業邏輯 service layer 錯誤:
+// 每個 api handler 都必須手動呼叫 adapters.FiberErrorHandler
+// 商業邏輯錯誤無法依靠 config.ErrorHandler 進行集中處理的原因, 有兩個因素互相影響:
+//
+//	2-1. 所有 mw 執行後 config.ErrorHandler 才會執行. 但 mw 在 handler 之後, 必須取得 http code
+//	2-2. middleware 無法取得 handler route, ref: https://github.com/gofiber/fiber/issues/3138
 func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App {
 	router := fiber.New(fiber.Config{
-		ErrorHandler:          fiber.DefaultErrorHandler,
+		ErrorHandler:          adapters.FiberErrorHandler,
 		AppName:               pkg.Version().ServiceName,
 		DisableStartupMessage: true,
-		WriteTimeout:          1 * time.Minute,
 	})
 
+	o11yMetric := wfiber.O11YMetric(pkg.Version().ServiceName)
 	o11yLogger1, o11yLogger2 := wfiber.O11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.Logger())
+	transaction := wfiber.GormTX(db, nil, pkg.Logger())
 	router.Use(
-		recover.New(),
+		recover.New(recover.Config{EnableStackTrace: true}),
 		cors.New(),
 		wfiber.O11YTrace(conf.O11Y.EnableTrace),
-		wfiber.O11YMetric(pkg.Version().ServiceName),
 		o11yLogger1,
-		o11yLogger2,
 	)
 
-	// 為了利用 fiber.DefaultErrorHandler, 讓 o11y mw 保證可以讀取到 http status code, 所以分為 router, root
-	root := fiber.New(fiber.Config{ErrorHandler: adapters.FiberErrorHandler})
-	router.Mount("", root)
-
-	root.Use(
-		wfiber.GormTX(db, nil, pkg.Logger()),
-	)
-
-	root.Get("/logger/level", wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
+	router.Get("/:id", o11yMetric, o11yLogger2, transaction, api.HelloFiber())
+	router.Get("/logger/level", o11yMetric, o11yLogger2, wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
 
 	return router
 }

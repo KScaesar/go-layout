@@ -1,19 +1,24 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/KScaesar/go-layout/pkg"
+	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 )
 
-func Hello(hack utility.Hack) func(c *gin.Context) {
+func HelloGin(hack utility.Hack) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		pkg.Logger().CtxGetLogger(c.Request.Context()).Info("Hello",
+		logger := pkg.Logger().CtxGetLogger(c.Request.Context())
+
+		logger.Info("HelloGin",
 			slog.Time("print_time", time.Now()),
-			slog.Any("print_fn", Hello),
+			slog.Any("print_fn", HelloGin),
 		)
 
 		if hack.Challenge(c.Query("hack_api")) {
@@ -23,5 +28,21 @@ func Hello(hack utility.Hack) func(c *gin.Context) {
 
 		c.String(200, "world")
 		return
+	}
+}
+
+func HelloFiber() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		logger := pkg.Logger().CtxGetLogger(c.UserContext())
+
+		// err := nil
+		err := fmt.Errorf("username must be have a upper letter: %w", pkg.ErrInvalidParam)
+		if err != nil {
+			logger.Error("hello fail", slog.Any("err", err))
+			return adapters.FiberErrorHandler(c, err)
+		}
+
+		logger.Info("hello fiber")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"acs": "hello"})
 	}
 }

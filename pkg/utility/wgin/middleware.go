@@ -13,10 +13,99 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/samber/slog-gin"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 )
+
+func O11YTrace(enableTrace bool) func(c *gin.Context) {
+	skipMethods := map[string]bool{
+		http.MethodHead:    true,
+		http.MethodConnect: true,
+		http.MethodOptions: true,
+	}
+	return func(c *gin.Context) {
+		if !enableTrace || skipMethods[c.Request.Method] {
+			c.Next()
+			return
+		}
+
+		ctx, span := otel.Tracer("").Start(c.Request.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
+		c.Request = c.Request.WithContext(ctx)
+		defer span.End()
+		c.Next()
+	}
+}
+
+func O11YMetric(svcName string) gin.HandlerFunc {
+	// Throughput
+	HttpRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "requests_total",
+		Help:      "Total number of HTTP requests",
+	}, []string{"method", "route"})
+
+	HttpErrorsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "requests_total_errors",
+		Help:      "Total number of HTTP errors",
+	}, []string{"method", "route", "code"})
+
+	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "requests_in_flight",
+		Help:      "The number of inflight requests being handled at the same time",
+	}, []string{"method", "route"})
+
+	// Latency
+	HttpResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "request_duration_seconds",
+		Help:      "Histogram of response time for HTTP in seconds",
+		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
+	}, []string{"method", "route", "code"})
+
+	return func(c *gin.Context) {
+		method := c.Request.Method
+		route := c.FullPath()
+
+		// metric1
+		start := time.Now()
+
+		// metric2
+		HttpRequestsTotal.WithLabelValues(method, route).Inc()
+
+		// metric3
+		HttpRequestsInflight.WithLabelValues(method, route).Add(1)
+
+		c.Next()
+
+		// metric3
+		HttpRequestsInflight.WithLabelValues(method, route).Add(-1)
+
+		// metric2
+		code := strconv.Itoa(c.Writer.Status())
+		if code[0] == '4' || code[0] == '5' {
+			HttpErrorsTotal.WithLabelValues(method, route, code).Inc()
+		}
+
+		// metric1
+		duration := time.Since(start).Seconds()
+		span := trace.SpanFromContext(c.Request.Context())
+		traceId := span.SpanContext().TraceID()
+		if traceId.IsValid() {
+			traceLabels := prometheus.Labels{"trace_id": traceId.String()}
+			HttpResponseSecond.WithLabelValues(method, route, code).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
+		} else {
+			HttpResponseSecond.WithLabelValues(method, route, code).Observe(duration)
+		}
+
+		return
+	}
+}
 
 func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerFunc, gin.HandlerFunc) {
 	var config sloggin.Config
@@ -47,7 +136,7 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerF
 		reqId := c.Writer.Header().Get(sloggin.RequestIDHeaderKey)
 		requestAttributes := []slog.Attr{
 			slog.String("method", c.Request.Method),
-			slog.String("path", c.FullPath()),
+			slog.String("route", c.FullPath()),
 		}
 		logger := Logger.With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),
@@ -69,104 +158,6 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerF
 		c.Next()
 	}
 	return h1, h2
-}
-
-func O11YTrace(enableTrace bool) func(c *gin.Context) {
-	skipMethods := map[string]bool{
-		http.MethodHead:    true,
-		http.MethodConnect: true,
-		http.MethodOptions: true,
-	}
-	return func(c *gin.Context) {
-		if !enableTrace || skipMethods[c.Request.Method] {
-			c.Next()
-			return
-		}
-
-		ctx, span := otel.Tracer("").Start(c.Request.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
-		c.Request = c.Request.WithContext(ctx)
-		defer span.End()
-
-		span.SetAttributes(
-			attribute.String("http.method", c.Request.Method),
-			attribute.String("http.path", c.FullPath()),
-		)
-
-		c.Next()
-	}
-}
-
-func O11YMetric(svcName string) func(c *gin.Context) {
-	// https://github.com/prometheus/prometheus/tree/main/docs/querying
-	// https://github.com/slok/go-http-metrics/blob/master/metrics/prometheus/prometheus.go#L76-L99
-	// https://github.com/slok/go-http-metrics/blob/master/middleware/middleware.go#L98-L105
-	// https://github.com/brancz/prometheus-example-app
-
-	// Throughput, Error Rate
-	HttpRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: svcName,
-		Subsystem: "http",
-		Name:      "requests_total",
-		Help:      "Total number of HTTP requests",
-	}, []string{"code", "method", "handler"})
-
-	// Latency
-	HttpResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: svcName,
-		Subsystem: "http",
-		Name:      "request_duration_seconds",
-		Help:      "Histogram of response time for HTTP in seconds",
-		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
-	}, []string{"code", "method", "handler"})
-
-	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: svcName,
-		Subsystem: "http",
-		Name:      "requests_in_flight",
-		Help:      "The number of inflight requests being handled at the same time",
-	}, []string{"method", "handler"})
-
-	skipMethods := map[string]bool{
-		http.MethodHead:    true,
-		http.MethodConnect: true,
-		http.MethodOptions: true,
-	}
-	return func(c *gin.Context) {
-		if skipMethods[c.Request.Method] {
-			c.Next()
-			return
-		}
-
-		span := trace.SpanFromContext(c.Request.Context())
-		traceId := span.SpanContext().TraceID()
-		spanId := span.SpanContext().SpanID()
-
-		method := c.Request.Method
-		handler := c.FullPath()
-
-		HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
-		start := time.Now()
-		defer func() {
-			duration := time.Since(start).Seconds()
-			HttpRequestsInflight.WithLabelValues(method, handler).Add(-1)
-
-			code := strconv.Itoa(c.Writer.Status())
-			labels := []string{code, method, handler}
-			HttpRequestsTotal.WithLabelValues(labels...).Inc()
-
-			if traceId.IsValid() && spanId.IsValid() {
-				traceLabels := prometheus.Labels{
-					"trace_id": traceId.String(),
-					"span_id":  spanId.String(),
-				}
-				HttpResponseSecond.WithLabelValues(labels...).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
-			} else {
-				HttpResponseSecond.WithLabelValues(labels...).Observe(duration)
-			}
-		}()
-
-		c.Next()
-	}
 }
 
 // GormTX
@@ -206,7 +197,7 @@ func GormTX(db *gorm.DB, skip func(ctx *gin.Context) bool, wlogger *wlog.Logger)
 
 		c.Next()
 
-		if len(c.Errors) > 0 {
+		if len(c.Errors) > 0 || c.Writer.Status() >= http.StatusBadRequest {
 			Err := tx.Rollback().Error
 			if Err != nil {
 				logger.Error("gorm tx rollback failed", "err", Err)

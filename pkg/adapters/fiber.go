@@ -13,14 +13,14 @@ func FiberErrorHandler(c *fiber.Ctx, err error) error {
 	myErr := pkg.ErrorUnwrap(err)
 	if myErr.ErrorCode() == pkg.ErrCodeUndefined {
 		Err, isFixed := fixUndefinedError(err)
-		if !isFixed {
+		if isFixed {
+			err = Err
+			myErr = pkg.ErrorUnwrap(err)
+		} else {
 			logger := pkg.Logger().CtxGetLogger(c.UserContext())
 			logger.Warn("capture undefined error", slog.Any("err", err))
 		}
-		err = Err
 	}
-
-	myErr = pkg.ErrorUnwrap(err)
 	return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
 }
 

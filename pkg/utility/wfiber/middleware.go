@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/samber/slog-fiber"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 )
@@ -35,29 +34,32 @@ func O11YTrace(enableTrace bool) fiber.Handler {
 		ctx, span := otel.Tracer("").Start(c.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
 		c.SetUserContext(ctx)
 		defer span.End()
-
-		span.SetAttributes(
-			attribute.String("http.method", string(c.Context().Method())),
-			attribute.String("http.path", c.Route().Path),
-		)
-
 		return c.Next()
 	}
 }
 
 func O11YMetric(svcName string) fiber.Handler {
-	// https://github.com/prometheus/prometheus/tree/main/docs/querying
-	// https://github.com/slok/go-http-metrics/blob/master/metrics/prometheus/prometheus.go#L76-L99
-	// https://github.com/slok/go-http-metrics/blob/master/middleware/middleware.go#L98-L105
-	// https://github.com/brancz/prometheus-example-app
-
-	// Throughput, Error Rate
+	// Throughput
 	HttpRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: svcName,
 		Subsystem: "http",
 		Name:      "requests_total",
 		Help:      "Total number of HTTP requests",
-	}, []string{"code", "method", "handler"})
+	}, []string{"method", "route"})
+
+	HttpErrorsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "requests_total_errors",
+		Help:      "Total number of HTTP errors",
+	}, []string{"method", "route", "code"})
+
+	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: svcName,
+		Subsystem: "http",
+		Name:      "requests_in_flight",
+		Help:      "The number of inflight requests being handled at the same time",
+	}, []string{"method", "route"})
 
 	// Latency
 	HttpResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -66,55 +68,44 @@ func O11YMetric(svcName string) fiber.Handler {
 		Name:      "request_duration_seconds",
 		Help:      "Histogram of response time for HTTP in seconds",
 		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
-	}, []string{"code", "method", "handler"})
-
-	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: svcName,
-		Subsystem: "http",
-		Name:      "requests_in_flight",
-		Help:      "The number of inflight requests being handled at the same time",
-	}, []string{"method", "handler"})
-
-	skipMethods := map[string]bool{
-		http.MethodHead:    true,
-		http.MethodConnect: true,
-		http.MethodOptions: true,
-	}
+	}, []string{"method", "route", "code"})
 
 	return func(c *fiber.Ctx) error {
-		if skipMethods[c.Method()] {
-			return c.Next()
+		method := c.Method()
+		route := c.Route().Path
+
+		// metric1
+		start := time.Now()
+
+		// metric2
+		HttpRequestsTotal.WithLabelValues(method, route).Inc()
+
+		// metric3
+		HttpRequestsInflight.WithLabelValues(method, route).Add(1)
+
+		err := c.Next()
+
+		// metric3
+		HttpRequestsInflight.WithLabelValues(method, route).Add(-1)
+
+		// metric2
+		code := strconv.Itoa(c.Response().StatusCode())
+		if code[0] == '4' || code[0] == '5' {
+			HttpErrorsTotal.WithLabelValues(method, route, code).Inc()
 		}
 
+		// metric1
+		duration := time.Since(start).Seconds()
 		span := trace.SpanFromContext(c.UserContext())
 		traceId := span.SpanContext().TraceID()
-		spanId := span.SpanContext().SpanID()
+		if traceId.IsValid() {
+			traceLabels := prometheus.Labels{"trace_id": traceId.String()}
+			HttpResponseSecond.WithLabelValues(method, route, code).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
+		} else {
+			HttpResponseSecond.WithLabelValues(method, route, code).Observe(duration)
+		}
 
-		method := c.Method()
-		handler := c.Route().Path
-
-		HttpRequestsInflight.WithLabelValues(method, handler).Add(1)
-		start := time.Now()
-		defer func() {
-			duration := time.Since(start).Seconds()
-			HttpRequestsInflight.WithLabelValues(method, handler).Add(-1)
-
-			code := strconv.Itoa(c.Response().StatusCode())
-			labels := []string{code, method, handler}
-			HttpRequestsTotal.WithLabelValues(labels...).Inc()
-
-			if traceId.IsValid() && spanId.IsValid() {
-				traceLabels := prometheus.Labels{
-					"trace_id": traceId.String(),
-					"span_id":  spanId.String(),
-				}
-				HttpResponseSecond.WithLabelValues(labels...).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
-			} else {
-				HttpResponseSecond.WithLabelValues(labels...).Observe(duration)
-			}
-		}()
-
-		return c.Next()
+		return err
 	}
 }
 
@@ -147,7 +138,7 @@ func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handl
 		reqId := string(c.Response().Header.Peek(slogfiber.RequestIDHeaderKey))
 		requestAttributes := []slog.Attr{
 			slog.String("method", c.Method()),
-			slog.String("path", c.Route().Path),
+			slog.String("route", c.Route().Path),
 		}
 		logger := wlogger.With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),
@@ -206,7 +197,7 @@ func GormTX(db *gorm.DB, skip func(ctx *fiber.Ctx) bool, wlogger *wlog.Logger) f
 		c.SetUserContext(utility.CtxWithGormTX(stdCtx, db, tx))
 
 		err = c.Next()
-		if err != nil {
+		if err != nil || c.Response().StatusCode() >= http.StatusBadRequest {
 			Err := tx.Rollback().Error
 			if Err != nil {
 				logger.Error("gorm tx rollback failed", "err", Err)
