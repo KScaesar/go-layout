@@ -147,7 +147,7 @@ func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handl
 		reqId := string(c.Response().Header.Peek(slogfiber.RequestIDHeaderKey))
 		requestAttributes := []slog.Attr{
 			slog.String("method", c.Method()),
-			slog.String("path", c.Path()),
+			slog.String("path", c.Route().Path),
 		}
 		logger := wlogger.With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),

@@ -47,7 +47,7 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerF
 		reqId := c.Writer.Header().Get(sloggin.RequestIDHeaderKey)
 		requestAttributes := []slog.Attr{
 			slog.String("method", c.Request.Method),
-			slog.String("path", c.Request.URL.Path),
+			slog.String("path", c.FullPath()),
 		}
 		logger := Logger.With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),
