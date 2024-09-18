@@ -10,35 +10,38 @@ import (
 )
 
 func FiberErrorHandler(c *fiber.Ctx, err error) error {
-SendCustomError:
 	myErr := pkg.ErrorUnwrap(err)
-	if myErr.ErrorCode() != pkg.ErrCodeUndefined {
-		return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
-	}
-
-	isFixed, Err := fixUndefinedError(err)
-	if isFixed {
+	if myErr.ErrorCode() == pkg.ErrCodeUndefined {
+		Err, isFixed := fixUndefinedError(err)
+		if !isFixed {
+			logger := pkg.Logger().CtxGetLogger(c.UserContext())
+			logger.Warn("capture undefined error", slog.Any("err", err))
+		}
 		err = Err
-		goto SendCustomError
 	}
 
-	pkg.Logger().CtxGetLogger(c.UserContext()).
-		Warn("capture undefined error",
-			slog.Any("err", err),
-		)
+	myErr = pkg.ErrorUnwrap(err)
 	return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
 }
 
-func fixUndefinedError(err error) (isFixed bool, Err error) {
+func fixUndefinedError(err error) (Err error, isFixed bool) {
 	var fiberErr *fiber.Error
 
 	switch {
 	case errors.As(err, &fiberErr):
-		switch fiberErr.Code {
-		case fiber.StatusNotFound:
-			return true, fmt.Errorf("%w: %w", pkg.ErrNotExists, err)
+		Err, isFixed = fixFiberError(fiberErr)
+		if isFixed {
+			return Err, true
 		}
 	}
 
-	return false, err
+	return err, false
+}
+
+func fixFiberError(err *fiber.Error) (error, bool) {
+	switch err.Code {
+	case fiber.StatusNotFound:
+		return fmt.Errorf("%w: %w", pkg.ErrNotExists, err), true
+	}
+	return err, false
 }
