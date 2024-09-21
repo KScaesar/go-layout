@@ -95,6 +95,8 @@ func (l *Logger) SetLevel(lvl slog.Level) {
 }
 
 func (l *Logger) SetStdDefaultLevel() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	slog.SetLogLoggerLevel(l.lvl.Level())
 }
 
