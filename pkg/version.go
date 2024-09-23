@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	release string
+	release      string
+	release_date string
 )
 
 var defaultVersion = newVersion()
@@ -33,9 +34,10 @@ func newVersion() version {
 	}
 
 	return version{
-		ServiceName: "CRM",
+		ServiceName: "ACS",
 		Commit:      commit,
 		Release:     release,
+		ReleaseDate: release_date,
 		GoVersion:   goVersion,
 	}
 }
@@ -44,6 +46,7 @@ type version struct {
 	ServiceName string `json:"svc"`
 	Commit      string `json:"commit"`
 	Release     string `json:"release"`
+	ReleaseDate string `json:"release_date"`
 	GoVersion   string `json:"go_version"`
 }
 
@@ -52,6 +55,7 @@ func (svc version) LogValue() slog.Value {
 		slog.String("svc", svc.ServiceName),
 		slog.String("commit", svc.Commit),
 		slog.String("release", svc.Release),
+		slog.String("release_date", svc.ReleaseDate),
 		slog.String("go_version", svc.GoVersion),
 	)
 }
