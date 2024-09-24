@@ -1,14 +1,14 @@
 package pkg
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
-func ErrorUnwrap(err error) (myErr *utility.CustomError) {
-	if errors.As(err, &myErr) {
+func UnwrapError(err error) *utility.CustomError {
+	myErr, ok := utility.UnwrapCustomError(err)
+	if ok {
 		return myErr
 	}
 	return ErrUndefined.(*utility.CustomError)
@@ -21,34 +21,34 @@ const (
 var (
 	ErrUndefined = defaultErrorRegistry.
 			AddErrorCode(ErrCodeUndefined).
-			Description("undefined error").
 			HttpStatus(http.StatusInternalServerError).
-			NewError()
+			NewError("undefined error")
 
 	ErrInvalidParam = defaultErrorRegistry.
 			AddErrorCode(4000).
-			Description("invalid parameter").
 			HttpStatus(http.StatusBadRequest).
-			NewError()
+			NewError("invalid parameter")
 	ErrExists = defaultErrorRegistry.
 			AddErrorCode(4001).
-			Description("resource already existed").
 			HttpStatus(http.StatusConflict).
-			NewError()
+			NewError("resource already existed")
 	ErrNotExists = defaultErrorRegistry.
 			AddErrorCode(4002).
-			Description("resource doesn't exist").
 			HttpStatus(http.StatusNotFound).
-			NewError()
+			NewError("resource does not exist")
 
 	ErrSystem = defaultErrorRegistry.
 			AddErrorCode(5000).
-			Description("system issue").
 			HttpStatus(http.StatusInternalServerError).
-			NewError()
+			NewError("system issue")
 	ErrDatabase = defaultErrorRegistry.
 			AddErrorCode(5001).
-			Description("database issue").
 			HttpStatus(http.StatusInternalServerError).
-			NewError()
+			NewError("database issue")
+)
+
+var (
+	ErrInvalidUsername = defaultErrorRegistry.
+		AddErrorCode(6000).
+		WrapError("username must be have a upper letter", ErrInvalidParam)
 )
