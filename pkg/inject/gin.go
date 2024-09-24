@@ -8,6 +8,7 @@ import (
 	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters/api"
+	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wgin"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -18,6 +19,10 @@ func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	router := gin.New()
+	router.NoRoute(func(c *gin.Context) {
+		err := pkg.ErrNotExists.(*utility.CustomError)
+		c.JSON(err.HttpStatus(), gin.H{"msg": err.Error()})
+	})
 
 	o11yLogger1, o11yLogger2 := wgin.O11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.Logger())
 	router.Use(
@@ -29,7 +34,7 @@ func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
 		wgin.GormTX(db, nil, pkg.Logger()),
 	)
 
-	router.GET("/", api.HelloGin(conf.Hack))
+	router.GET("/:id", api.HelloGin(conf.Hack))
 	router.GET("/logger/level", wgin.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
 
 	v1 := router.Group("/api/v1")
