@@ -27,9 +27,7 @@ type ErrorRegistry struct {
 }
 
 func (r *ErrorRegistry) ShowErrors() {
-	slices.SortFunc(r.errCodeSlice, func(a, b int) int {
-		return a - b
-	})
+	slices.SortFunc(r.errCodeSlice, func(a, b int) int { return a - b })
 
 	texts := make([]string, 0, len(r.errCodeSlice)+2)
 

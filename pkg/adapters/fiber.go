@@ -10,12 +10,12 @@ import (
 )
 
 func FiberErrorHandler(c *fiber.Ctx, err error) error {
-	myErr := pkg.ErrorUnwrap(err)
+	myErr := pkg.UnwrapError(err)
 	if myErr.ErrorCode() == pkg.ErrCodeUndefined {
 		Err, isFixed := fixUndefinedError(err)
 		if isFixed {
 			err = Err
-			myErr = pkg.ErrorUnwrap(err)
+			myErr = pkg.UnwrapError(err)
 		} else {
 			logger := pkg.Logger().CtxGetLogger(c.UserContext())
 			logger.Warn("capture undefined error", slog.Any("err", err))
