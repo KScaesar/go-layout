@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	git_commit   string
 	release      string
 	release_date string
 )
@@ -17,25 +18,18 @@ func Version() version {
 }
 
 func newVersion() version {
-	commit := ""
 	goVersion := ""
 	if info, ok := debug.ReadBuildInfo(); ok {
 		goVersion = info.GoVersion
-
-		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" {
-				commit = setting.Value
-			}
-		}
 	}
 
-	if len(commit) >= 8 {
-		commit = commit[:8]
+	if len(git_commit) >= 8 {
+		git_commit = git_commit[:8]
 	}
 
 	return version{
 		ServiceName: "ACS",
-		Commit:      commit,
+		GitCommit:   git_commit,
 		Release:     release,
 		ReleaseDate: release_date,
 		GoVersion:   goVersion,
@@ -44,7 +38,7 @@ func newVersion() version {
 
 type version struct {
 	ServiceName string `json:"svc"`
-	Commit      string `json:"commit"`
+	GitCommit   string `json:"git_commit"`
 	Release     string `json:"release"`
 	ReleaseDate string `json:"release_date"`
 	GoVersion   string `json:"go_version"`
@@ -53,7 +47,7 @@ type version struct {
 func (svc version) LogValue() slog.Value {
 	return slog.GroupValue(
 		slog.String("svc", svc.ServiceName),
-		slog.String("commit", svc.Commit),
+		slog.String("git_commit", svc.GitCommit),
 		slog.String("release", svc.Release),
 		slog.String("release_date", svc.ReleaseDate),
 		slog.String("go_version", svc.GoVersion),
