@@ -42,6 +42,18 @@ func (r *ErrorRegistry) ShowErrors() {
 }
 
 // AddErrorCode ErrorCode is Must Field
+// The correct call sequence starts with AddErrorCode and ends with NewError or WrapError.
+//
+// Example:
+//
+//	ErrInvalidParam = ErrorRegistry.
+//		AddErrorCode(4000).
+//		HttpStatus(http.StatusBadRequest).
+//		NewError("invalid parameter")
+//
+//	ErrInvalidUsername = ErrorRegistry.
+//		AddErrorCode(6000).
+//		WrapError("username must be having a upper letter", ErrInvalidParam)
 func (r *ErrorRegistry) AddErrorCode(errCode int) *ErrorRegistry {
 	if r.target != nil {
 		panic(panicTextOfErrorRegistry)
@@ -81,8 +93,8 @@ func (r *ErrorRegistry) NewError(description string) error {
 }
 
 // WrapError
-// 內部實作透過 fmt.Errorf 另外包裝 error,
-// 模擬繼承的概念, 將 baseError 的 Optional Field 自動複製到新的 error
+// 內部實作透過 fmt.Errorf 另外包裝 error, 模擬繼承的概念,
+// 將 baseError 的 Optional Field 自動複製到新的 error
 func (r *ErrorRegistry) WrapError(description string, baseError error) error {
 	if r.target == nil {
 		panic(panicTextOfErrorRegistry)

@@ -50,5 +50,5 @@ var (
 var (
 	ErrInvalidUsername = defaultErrorRegistry.
 		AddErrorCode(6000).
-		WrapError("username must be have a upper letter", ErrInvalidParam)
+		WrapError("username must be having a upper letter", ErrInvalidParam)
 )
