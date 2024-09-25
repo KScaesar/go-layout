@@ -58,10 +58,10 @@ func ServeFiber(port string, debug bool, router *fiber.App) {
 		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		return nil
 	})
+	pkg.Shutdown().AddPriorityShutdownAction(0, "api", router.Server().Shutdown)
 
 	go func() {
 		err := router.Listen("0.0.0.0:" + port)
 		pkg.Shutdown().Notify(err)
 	}()
-	pkg.Shutdown().AddPriorityShutdownAction(0, "api", router.Server().Shutdown)
 }

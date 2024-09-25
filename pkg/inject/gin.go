@@ -50,13 +50,13 @@ func ServeGin(port string, handler http.Handler) {
 		Addr:    "0.0.0.0:" + port,
 		Handler: handler,
 	}
+	pkg.Shutdown().AddPriorityShutdownAction(0, "api", func() error {
+		return server.Shutdown(context.Background())
+	})
 
 	go func() {
 		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		err := server.ListenAndServe()
 		pkg.Shutdown().Notify(err)
 	}()
-	pkg.Shutdown().AddPriorityShutdownAction(0, "api", func() error {
-		return server.Shutdown(context.Background())
-	})
 }

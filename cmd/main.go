@@ -42,14 +42,15 @@ func main() {
 	if err != nil {
 		return
 	}
-	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, logger.Logger)
-
 	infra, err := inject.NewInfra(conf)
 	if err != nil {
 		return
 	}
 	svc := inject.NewService(conf, infra)
 	mux := inject.NewGinRouter(conf, infra.MySql, svc)
+
+	// server start
+	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, logger.Logger)
 	inject.ServeGin(conf.Http.Port, mux)
 
 	<-shutdown.WaitChannel()

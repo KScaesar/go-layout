@@ -76,6 +76,10 @@ func ServeO11YMetric(port string, shutdown *Shutdown, logger *slog.Logger) {
 	http.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{EnableOpenMetrics: true}))
 
 	server := &http.Server{Addr: "0.0.0.0:" + port, Handler: http.DefaultServeMux}
+	shutdown.AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
+		return server.Shutdown(context.Background())
+	})
+
 	go func() {
 		logger.Info("pprof start", slog.String("url", "http://0.0.0.0:"+port+"/debug/pprof"))
 		logger.Info("fgprof start", slog.String("url", "http://0.0.0.0:"+port+"/debug/fgprof?seconds=1"))
@@ -83,7 +87,4 @@ func ServeO11YMetric(port string, shutdown *Shutdown, logger *slog.Logger) {
 		err := server.ListenAndServe()
 		shutdown.Notify(err)
 	}()
-	shutdown.AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
-		return server.Shutdown(context.Background())
-	})
 }
