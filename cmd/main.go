@@ -24,11 +24,8 @@ func main() {
 	pkg.Init(conf)
 	logger := pkg.Logger()
 	shutdown := pkg.Shutdown()
+
 	go shutdown.Serve()
-
-	logger.Debug("show config", slog.Any("conf", conf))
-	pkg.ErrorRegistry().ShowErrors()
-
 	var err error
 	defer func() {
 		if err != nil {
@@ -38,23 +35,19 @@ func main() {
 		}
 	}()
 
-	if err = utility.ServeObservability(
-		pkg.Version().ServiceName,
-		&conf.O11Y,
-		logger.Logger,
-		shutdown,
-	); err != nil {
-		logger.Error("serve o11y failed", slog.Any("err", err))
+	logger.Debug("show config", slog.Any("conf", conf))
+	pkg.ErrorRegistry().ShowErrors()
+
+	err = utility.InitO11YTracer(&conf.O11Y, shutdown, pkg.Version().ServiceName)
+	if err != nil {
 		return
 	}
+	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, logger.Logger)
 
-	infra, Err := inject.NewInfra(conf)
-	if Err != nil {
-		err = Err
-		logger.Error("create infra failed", slog.Any("err", Err))
+	infra, err := inject.NewInfra(conf)
+	if err != nil {
 		return
 	}
-
 	svc := inject.NewService(conf, infra)
 	mux := inject.NewGinRouter(conf, infra.MySql, svc)
 	inject.ServeGin(conf.Http.Port, mux)

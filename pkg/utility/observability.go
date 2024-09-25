@@ -32,63 +32,58 @@ func (o O11YConfig) TraceAddress() string {
 
 //
 
-func ServeObservability(
-	svcName string,
-	conf *O11YConfig,
-	logger *slog.Logger,
-	shutdown *Shutdown,
-) error {
-	ctx := context.Background()
-
-	if conf.EnableTrace {
-		exporter, err := otlptrace.New(
-			ctx,
-			otlptracehttp.NewClient(
-				otlptracehttp.WithEndpoint(conf.TraceAddress()),
-				otlptracehttp.WithInsecure(),
-			),
-		)
-		if err != nil {
-			return fmt.Errorf("create OTLP trace exporter: %w", err)
-		}
-
-		provider := sdktrace.NewTracerProvider(
-			sdktrace.WithBatcher(exporter),
-			sdktrace.WithResource(resource.NewWithAttributes(
-				semconv.SchemaURL,
-				semconv.ServiceNameKey.String(svcName),
-			)),
-			// sdktrace.WithSampler(sdktrace.TraceIDRatioBased(conf.SampleRate)),
-		)
-		otel.SetTracerProvider(provider)
-
-		shutdown.AddPriorityShutdownAction(2, "trace", func() error {
-			return provider.Shutdown(ctx)
-		})
+func InitO11YTracer(conf *O11YConfig, shutdown *Shutdown, svcName string) error {
+	if !conf.EnableTrace {
+		return nil
 	}
 
-	// base pprof
+	exporter, err := otlptrace.New(
+		context.Background(),
+		otlptracehttp.NewClient(
+			otlptracehttp.WithEndpoint(conf.TraceAddress()),
+			otlptracehttp.WithInsecure(),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("create OTLP trace exporter: %w", err)
+	}
+
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(svcName),
+		)),
+	)
+	otel.SetTracerProvider(provider)
+
+	shutdown.AddPriorityShutdownAction(2, "trace", func() error {
+		return provider.Shutdown(context.Background())
+	})
+	return nil
+}
+
+func ServeO11YMetric(port string, shutdown *Shutdown, logger *slog.Logger) {
+	// pprof
 	// https://cs.opensource.google/go/go/+/refs/tags/go1.23.0:src/net/http/pprof/pprof.go;l=100-104
-	//
-	// custom pprof
 	// https://pkg.go.dev/runtime/pprof#Profile
 
+	// fgprof
+	// https://github.com/felixge/fgprof?tab=readme-ov-file#how-it-works
 	http.Handle("/debug/fgprof", fgprof.Handler())
 
 	// metric
 	http.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{EnableOpenMetrics: true}))
 
-	server := &http.Server{Addr: "0.0.0.0:" + conf.Port, Handler: http.DefaultServeMux}
+	server := &http.Server{Addr: "0.0.0.0:" + port, Handler: http.DefaultServeMux}
 	go func() {
-		logger.Info("pprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/pprof"))
-		logger.Info("fgprof start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/debug/fgprof?seconds=1"))
-		logger.Info("metric start", slog.String("url", "http://0.0.0.0:"+conf.Port+"/metrics"))
+		logger.Info("pprof start", slog.String("url", "http://0.0.0.0:"+port+"/debug/pprof"))
+		logger.Info("fgprof start", slog.String("url", "http://0.0.0.0:"+port+"/debug/fgprof?seconds=1"))
+		logger.Info("metric start", slog.String("url", "http://0.0.0.0:"+port+"/metrics"))
 		err := server.ListenAndServe()
 		shutdown.Notify(err)
 	}()
 	shutdown.AddPriorityShutdownAction(2, "metric_&_pprof", func() error {
-		return server.Shutdown(ctx)
+		return server.Shutdown(context.Background())
 	})
-
-	return nil
 }
