@@ -9,11 +9,12 @@ import (
 
 type Hack string
 
+// Challenge 正確數值依照每個小時變化, 避免被有心人紀錄
 func (hack Hack) Challenge(value string) bool {
-	return hack.value() == value
+	return hack.Value() == value
 }
 
-func (hack Hack) value() string {
+func (hack Hack) Value() string {
 	const MMDDHH = "010215"
 	cipher := time.Now().Format(MMDDHH)
 	m, _ := strconv.Atoi(cipher[0:2])
@@ -22,7 +23,7 @@ func (hack Hack) value() string {
 
 	key := string(hack)
 	const AlphabetSize int = 26
-	if len(key) <= AlphabetSize {
+	if len(key) < AlphabetSize {
 		key = "abcdefghkjilmnopqrstuvwxyz"
 	}
 

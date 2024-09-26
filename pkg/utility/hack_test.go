@@ -6,5 +6,5 @@ import (
 
 func TestHack_value(t *testing.T) {
 	var hack Hack = ""
-	t.Log(hack.value())
+	t.Log(hack.Value())
 }
