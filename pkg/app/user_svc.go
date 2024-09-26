@@ -6,6 +6,8 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility/dataflow"
 )
 
+//go:generate mockgen -package=app -source=user_svc.go -destination=user_svc_mock.go -typed UserRepository UserService
+
 type UserRepository interface {
 	LockUserById(ctx context.Context, userId string) (User, error)
 	CreteUser(ctx context.Context, user *User) error
