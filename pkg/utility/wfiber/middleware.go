@@ -6,17 +6,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gofiber/fiber/v2"
-
-	"github.com/KScaesar/go-layout/pkg/utility/wlog"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/samber/slog-fiber"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 )
 
 func O11YTrace(enableTrace bool) fiber.Handler {

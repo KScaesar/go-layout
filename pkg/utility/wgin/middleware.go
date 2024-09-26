@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/KScaesar/go-layout/pkg/utility"
-	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -15,6 +13,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 )
 
 func O11YTrace(enableTrace bool) func(c *gin.Context) {

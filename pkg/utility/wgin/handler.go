@@ -4,9 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
-	"github.com/gin-gonic/gin"
 )
 
 func ChangeLoggerLevel(hack utility.Hack, wlogger *wlog.Logger) gin.HandlerFunc {

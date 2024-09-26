@@ -19,36 +19,36 @@ const (
 )
 
 var (
-	ErrUndefined = defaultErrorRegistry.
+	ErrUndefined = ErrorRegistry().
 			AddErrorCode(ErrCodeUndefined).
 			HttpStatus(http.StatusInternalServerError).
 			NewError("undefined error")
 
-	ErrInvalidParam = defaultErrorRegistry.
+	ErrInvalidParam = ErrorRegistry().
 			AddErrorCode(4000).
 			HttpStatus(http.StatusBadRequest).
 			NewError("invalid parameter")
-	ErrExists = defaultErrorRegistry.
+	ErrExists = ErrorRegistry().
 			AddErrorCode(4001).
 			HttpStatus(http.StatusConflict).
 			NewError("resource already existed")
-	ErrNotExists = defaultErrorRegistry.
+	ErrNotExists = ErrorRegistry().
 			AddErrorCode(4002).
 			HttpStatus(http.StatusNotFound).
 			NewError("resource does not exist")
 
-	ErrSystem = defaultErrorRegistry.
+	ErrSystem = ErrorRegistry().
 			AddErrorCode(5000).
 			HttpStatus(http.StatusInternalServerError).
 			NewError("system issue")
-	ErrDatabase = defaultErrorRegistry.
+	ErrDatabase = ErrorRegistry().
 			AddErrorCode(5001).
 			HttpStatus(http.StatusInternalServerError).
 			NewError("database issue")
 )
 
 var (
-	ErrInvalidUsername = defaultErrorRegistry.
+	ErrInvalidUsername = ErrorRegistry().
 		AddErrorCode(6000).
 		WrapError("username must be having a upper letter", ErrInvalidParam)
 )

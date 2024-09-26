@@ -4,19 +4,20 @@
 package inject
 
 import (
-	"github.com/KScaesar/go-layout/configs"
+	"github.com/google/wire"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/adapters/database"
 	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/KScaesar/go-layout/pkg/utility"
-	"github.com/google/wire"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
-func NewInfra(conf *configs.Config) (*Infra, error) {
+func NewInfra(conf *pkg.Config) (*Infra, error) {
 	panic(wire.Build(
-		wire.FieldsOf(new(*configs.Config),
+		wire.FieldsOf(new(*pkg.Config),
 			"MySql",
 			"Redis",
 		),
@@ -35,7 +36,7 @@ type Infra struct {
 
 //
 
-func NewService(conf *configs.Config, infra *Infra) *Service {
+func NewService(conf *pkg.Config, infra *Infra) *Service {
 	panic(wire.Build(
 		wire.FieldsOf(new(*Infra),
 			"MySql",

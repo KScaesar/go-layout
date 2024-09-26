@@ -5,16 +5,16 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/KScaesar/go-layout/configs"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters/api"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wgin"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
-func NewGinRouter(conf *configs.Config, db *gorm.DB, svc *Service) *gin.Engine {
+func NewGinRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *gin.Engine {
 	if !conf.Http.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}

@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/gookit/goutil/maputil"
+
+	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
 func NewBodyEgress(subject string, body any) *Message {

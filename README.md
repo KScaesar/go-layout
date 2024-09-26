@@ -12,7 +12,6 @@
 - 上述架構圖以抽象架構的角度進行繪圖, 圖片內容與物理存放位置不一定正相關  
   比如 `utility/`, `inject/` 雖然物理位置在 `pkg/` 底下, 但只是為了集中 go 程式才放在一起, 抽象意義並不會跟 `pkg/` 一起思考
 - `pkg/` 是所有 go 程式的物理存放位置  
-  唯一例外: config.go 抽象意義應該放在 `pkg/`, 但為了方便查找 config.yml, 所以 config.go 物理存放位置是 `configs/`
 - `pkg/` 物理位置有四個目錄 `adapters/`, `app/`, `utility/`, `inject/`, 用抽象角度思考可以分為三個類型
     1. `pkg/`, `app/`, `adapters/`: 和商業邏輯相關的程式碼 及 global variable 依賴 (defaultErrorRegistry, defaultLogger, defaultShutdown, defaultVersion ...)
     2. `utility/`: 提供技術類型的元件, 期望未來可以成為公司專用 package, 避免每個 project 的做法不同
@@ -27,18 +26,6 @@
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
 Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.svc.litv.tv/ad-team/ACS.git
-git branch -M main
-git push -uf origin main
-```
 
 ## Integrate with your tools
 

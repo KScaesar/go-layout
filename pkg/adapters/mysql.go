@@ -3,14 +3,14 @@ package adapters
 import (
 	"fmt"
 
-	"github.com/KScaesar/go-layout/configs"
-	"github.com/KScaesar/go-layout/pkg"
 	"gorm.io/driver/mysql"
+
+	"github.com/KScaesar/go-layout/pkg"
 
 	"gorm.io/gorm"
 )
 
-func NewMySqlGorm(conf *configs.MySql) (*gorm.DB, error) {
+func NewMySqlGorm(conf *pkg.MySql) (*gorm.DB, error) {
 	db, err := gorm.Open(mysql.Open(conf.DSN()), &gorm.Config{
 		Logger:                                   nil,
 		NowFunc:                                  nil,

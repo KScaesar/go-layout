@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 
-	"github.com/KScaesar/go-layout/pkg/app"
 	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg/app"
 )
 
 func NewUserMySQL(db *gorm.DB) *UserMySQL {

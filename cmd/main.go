@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/inject"
 	"github.com/KScaesar/go-layout/pkg/utility"
@@ -18,7 +17,7 @@ func init() {
 }
 
 func main() {
-	conf := configs.MustLoadConfig(pkg.Logger().Logger)
+	conf := pkg.MustLoadConfig()
 
 	// Init is required before get default global variables
 	pkg.Init(conf)
@@ -38,10 +37,6 @@ func main() {
 	logger.Debug("show config", slog.Any("conf", conf))
 	pkg.ErrorRegistry().ShowErrors()
 
-	err = utility.InitO11YTracer(&conf.O11Y, shutdown, pkg.Version().ServiceName)
-	if err != nil {
-		return
-	}
 	infra, err := inject.NewInfra(conf)
 	if err != nil {
 		return

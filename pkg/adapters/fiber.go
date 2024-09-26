@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/KScaesar/go-layout/pkg"
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/KScaesar/go-layout/pkg"
 )
 
 func FiberErrorHandler(c *fiber.Ctx, err error) error {

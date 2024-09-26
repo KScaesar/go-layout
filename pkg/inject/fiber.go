@@ -3,16 +3,15 @@ package inject
 import (
 	"log/slog"
 
-	"github.com/KScaesar/go-layout/configs"
-	"github.com/KScaesar/go-layout/pkg"
-	"github.com/KScaesar/go-layout/pkg/adapters"
-	"github.com/KScaesar/go-layout/pkg/adapters/api"
-	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg"
+	"github.com/KScaesar/go-layout/pkg/adapters"
+	"github.com/KScaesar/go-layout/pkg/adapters/api"
+	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
 )
 
 // NewFiberRouter
@@ -27,7 +26,7 @@ import (
 //
 //	2-1. 所有 mw 執行後 config.ErrorHandler 才會執行. 但 mw 在 handler 之後, 必須取得 http code
 //	2-2. middleware 無法取得 handler route, ref: https://github.com/gofiber/fiber/issues/3138
-func NewFiberRouter(conf *configs.Config, db *gorm.DB, svc *Service) *fiber.App {
+func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 	router := fiber.New(fiber.Config{
 		ErrorHandler:          adapters.FiberErrorHandler,
 		AppName:               pkg.Version().ServiceName,

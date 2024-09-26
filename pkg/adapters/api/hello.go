@@ -4,11 +4,12 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/utility"
-	"github.com/gin-gonic/gin"
-	"github.com/gofiber/fiber/v2"
 )
 
 func HelloGin(hack utility.Hack) func(c *gin.Context) {

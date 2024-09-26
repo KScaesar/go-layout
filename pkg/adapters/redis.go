@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/KScaesar/go-layout/configs"
-	"github.com/KScaesar/go-layout/pkg"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/KScaesar/go-layout/pkg"
 )
 
-func NewRedis(conf *configs.Redis) (*redis.Client, error) {
+func NewRedis(conf *pkg.Redis) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:           conf.Address(),
 		Username:       conf.User,

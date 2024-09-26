@@ -28,7 +28,7 @@ func newVersion() version {
 	}
 
 	return version{
-		ServiceName: "ACS",
+		ServiceName: "Service",
 		GitCommit:   git_commit,
 		Release:     release,
 		ReleaseDate: release_date,

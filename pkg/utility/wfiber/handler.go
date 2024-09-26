@@ -3,9 +3,10 @@ package wfiber
 import (
 	"log/slog"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
-	"github.com/gofiber/fiber/v2"
 )
 
 func ChangeLoggerLevel(hack utility.Hack, wlogger *wlog.Logger) fiber.Handler {

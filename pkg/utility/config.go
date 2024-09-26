@@ -31,11 +31,6 @@ func LoadLocalConfigFromMultiSource[T any](
 	conf *T,
 	err error,
 ) {
-
-	if logger == nil {
-		logger = slog.Default()
-	}
-
 	const (
 		byNormal int = iota + 1
 		byCurrentDir

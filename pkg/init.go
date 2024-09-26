@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/KScaesar/go-layout/configs"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 )
@@ -16,12 +15,18 @@ func init() {
 }
 
 // Init initializes the necessary default global variables
-func Init(conf *configs.Config) {
+func Init(conf *Config) {
 	logger := wlog.NewLogger(os.Stdout, &conf.Logger, wlog.DefaultFormat()...)
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	Logger().PointToNew(logger)
 	Logger().SetStdDefaultLevel()
 	Logger().SetStdDefaultLogger()
+
+	err := utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
+	if err != nil {
+		logger.Error("init o11y tracer fail", slog.Any("err", err))
+		os.Exit(1)
+	}
 }
 
 // 大部分的情況不允許 pkg目錄 以外的程式碼

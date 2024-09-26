@@ -7,18 +7,19 @@
 package inject
 
 import (
-	"github.com/KScaesar/go-layout/configs"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+
+	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/adapters/database"
 	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/KScaesar/go-layout/pkg/utility"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 // Injectors from wire.go:
 
-func NewInfra(conf *configs.Config) (*Infra, error) {
+func NewInfra(conf *pkg.Config) (*Infra, error) {
 	mySql := &conf.MySql
 	db, err := adapters.NewMySqlGorm(mySql)
 	if err != nil {
@@ -36,7 +37,7 @@ func NewInfra(conf *configs.Config) (*Infra, error) {
 	return infra, nil
 }
 
-func NewService(conf *configs.Config, infra *Infra) *Service {
+func NewService(conf *pkg.Config, infra *Infra) *Service {
 	db := infra.MySql
 	transaction := utility.NewGormTransaction(db)
 	easyTransaction := utility.NewGormEasyTransaction(db)

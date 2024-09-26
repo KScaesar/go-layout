@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 
-	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/KScaesar/go-layout/pkg/app"
 )
 
 func NewUserRedis(client *redis.Client) *UserRedis {

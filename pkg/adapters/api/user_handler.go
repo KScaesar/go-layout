@@ -3,8 +3,9 @@ package api
 import (
 	"net/http"
 
-	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/gin-gonic/gin"
+
+	"github.com/KScaesar/go-layout/pkg/app"
 )
 
 func RegisterUser(svc app.UserService) gin.HandlerFunc {

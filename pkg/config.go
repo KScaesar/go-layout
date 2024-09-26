@@ -1,4 +1,4 @@
-package configs
+package pkg
 
 import (
 	"flag"
@@ -6,16 +6,19 @@ import (
 	"log/slog"
 	"os"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
-	"gopkg.in/yaml.v3"
 )
 
-func MustLoadConfig(logger *slog.Logger) *Config {
+func MustLoadConfig() *Config {
 	const defaultPath = "./configs/local.yml"
 
 	filePath := flag.String("conf", defaultPath, "Path to the configuration file")
 	flag.Parse()
+
+	logger := Logger().Logger
 
 	conf, err := utility.LoadLocalConfigFromMultiSource[Config](
 		yaml.Unmarshal,
