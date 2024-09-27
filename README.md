@@ -21,6 +21,10 @@
 - Dependency Injection 用來處理和商業邏輯相關的依賴, 讓程式有可測試性. 而與商業邏輯無關的依賴則放在全域變數, 因為不會影響到邏輯的變更
 - 不是 high level 去依賴 low level. 應該是 high level 提出它需要的功能, low level 去實作出這些功能, 達成 high level 的目標
 
+[golang-standards/project-layout](https://github.com/golang-standards/project-layout/blob/master/README_zh-TW.md)
+
+[Hexagonal Architecture](https://medium.com/ssense-tech/hexagonal-architecture-there-are-always-two-sides-to-every-story-bc0780ed7d9c)
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.

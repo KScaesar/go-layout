@@ -20,11 +20,7 @@ func MustLoadConfig() *Config {
 
 	logger := Logger().Logger
 
-	conf, err := utility.LoadLocalConfigFromMultiSource[Config](
-		yaml.Unmarshal,
-		*filePath,
-		logger,
-	)
+	conf, err := utility.LoadLocalConfigFromMultiSource[Config](yaml.Unmarshal, *filePath, logger)
 	if err != nil {
 		logger.Error("load config fail", slog.Any("err", err))
 		os.Exit(1)
