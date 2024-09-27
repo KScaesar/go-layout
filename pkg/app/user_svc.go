@@ -6,7 +6,7 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility/dataflow"
 )
 
-//go:generate mockgen -package=app -source=user_svc.go -destination=user_svc_mock.go -typed UserRepository UserService
+//go:generate mockgen -typed -package=app -destination=user_svc_mock.go -source=user_svc.go
 
 type UserRepository interface {
 	LockUserById(ctx context.Context, userId string) (User, error)
@@ -38,7 +38,7 @@ func NewUserUseCase(userRepo UserRepository) *UserUseCase {
 
 type UserUseCase struct {
 	userRepo UserRepository
-	bus      dataflow.MessageBus
+	bus      dataflow.Producer
 }
 
 func (uc *UserUseCase) RegisterUser(ctx context.Context, req *RegisterUserRequest) error {
@@ -53,8 +53,7 @@ func (uc *UserUseCase) RegisterUser(ctx context.Context, req *RegisterUserReques
 	}
 
 	event := NewRegisteredUserEvent(user)
-	event.Ctx = ctx
-	return uc.bus.Send(event)
+	return uc.bus.SendWithCtx(ctx, event)
 }
 
 func (uc *UserUseCase) UpdateUserInfo(ctx context.Context, userId string, req *UpdateUserInfoRequest) error {

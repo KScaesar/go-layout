@@ -7,14 +7,13 @@
 package inject
 
 import (
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
-
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
 	"github.com/KScaesar/go-layout/pkg/adapters/database"
 	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/KScaesar/go-layout/pkg/utility"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 // Injectors from wire.go:
