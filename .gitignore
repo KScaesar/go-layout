@@ -4,10 +4,10 @@
 .run/**
 
 *keys/**
-!keys/example.*
+!keys/example*
 
 *configs/**
-!configs/example.*
+!configs/example*
 !configs/*.go
 
 .go-version

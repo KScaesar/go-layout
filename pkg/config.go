@@ -13,7 +13,7 @@ import (
 )
 
 func MustLoadConfig() *Config {
-	const defaultPath = "./configs/local.yml"
+	const defaultPath = "./configs/config.yml"
 
 	filePath := flag.String("conf", defaultPath, "Path to the configuration file")
 	flag.Parse()

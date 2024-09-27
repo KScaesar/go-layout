@@ -19,7 +19,8 @@
 - 箭頭表示套件依賴方向, 而不是資料流方向. 大多數的情況子層目錄依賴父層目錄
 - project 商業邏輯的依賴終點是 `app/`, 有人也稱為 service layer
 - Dependency Injection 用來處理和商業邏輯相關的依賴, 讓程式有可測試性. 而與商業邏輯無關的依賴則放在全域變數, 因為不會影響到邏輯的變更
-- 不是 high level 去依賴 low level. 應該是 high level 提出它需要的功能, low level 去實作出這些功能, 達成 high level 的目標
+- 抽像不應該依賴細節。細節應該取決於抽象。  
+  不是 high level 去依賴 low level. 應該是 high level 提出需要的功能, low level 去實作
 
 [golang-standards/project-layout](https://github.com/golang-standards/project-layout/blob/master/README_zh-TW.md)
 
