@@ -1,0 +1,36 @@
+[Unit]
+Description=My App
+After=network.target
+
+[Service]
+Type=simple
+OOMScoreAdjust=-500
+LimitNOFILE=65536
+TimeoutStartSec=60s
+User=myuser
+Group=mygroup
+
+#Environment=ENV_VAR_NAME=value
+ExecStart=/usr/local/bin/myapp
+WorkingDirectory=/opt/myapp/
+
+SyslogIdentifier=myapp
+StandardOutput=syslog
+StandardError=syslog
+
+#StandardOutput=append:/var/log/myapp/biz.log
+#StandardError=append:/var/log/myapp/ops.log
+
+#ExecReload=/usr/local/bin/myapp --reload
+#ExecReload=/bin/kill -HUP $MAINPID
+
+#ExecStop=/usr/local/bin/myapp --shutdown
+
+Restart=on-failure
+#RestartPreventExitStatus=2 3
+
+SendSIGKILL=no
+#TimeoutStopSec=30s
+
+[Install]
+WantedBy=multi-user.target

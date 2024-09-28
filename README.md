@@ -2,7 +2,7 @@
 
 ## project layout
 
-![project_layout](./doc/project_layout.png)
+![project_layout](./docs/project_layout.png)
 
 首先要分成兩個視角
 1. 實際物理目錄存放位置

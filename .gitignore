@@ -12,6 +12,10 @@
 
 .go-version
 
+report.xml
+cobertura.xml
+code-coverage.html
+
 # --- #
 
 # Created by https://www.toptal.com/developers/gitignore/api/go
