@@ -1,38 +1,41 @@
 package wlog
 
 import (
+	"io"
 	"os"
 )
 
-func NewLoggerWhenDebug() *Logger {
-	const debug = -4
-	conf := &Config{
-		AddSource:  true,
-		JsonFormat: false,
-		Level_:     debug,
-	}
-	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
-	return logger
+func NewFileLogger(w io.Writer, conf *Config) *Logger {
+	handler := NewHandler(w, true, conf)
+	return NewLogger(conf.LevelVar, handler)
 }
 
-func NewLoggerWhenNormalRun(source bool) *Logger {
-	const info = 0
-	conf := &Config{
-		AddSource:  source,
-		JsonFormat: false,
-		Level_:     info,
-	}
-	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
-	return logger
+func NewConsoleLogger(w io.Writer, conf *Config) *Logger {
+	handler := NewHandler(w, false, conf)
+	return NewLogger(conf.LevelVar, handler)
 }
 
-func NewLoggerWhenContinuousIntegration() *Logger {
-	const warn = 4
-	conf := &Config{
-		AddSource:  true,
-		JsonFormat: false,
-		Level_:     warn,
-	}
-	logger := NewLogger(os.Stdout, conf, DefaultFormat()...)
-	return logger
+func NewStderrLogger(conf *Config) *Logger {
+	return NewConsoleLogger(os.Stderr, conf)
+}
+
+func NewStderrLoggerWhenNormal(source bool) *Logger {
+	conf := &Config{}
+	info := 0
+	conf.SetAddSource(source).SetLevelVar(info)
+	return NewStderrLogger(conf)
+}
+
+func NewStderrLoggerWhenDebug() *Logger {
+	conf := &Config{}
+	debug := -4
+	conf.SetAddSource(true).SetLevelVar(debug)
+	return NewStderrLogger(conf)
+}
+
+func NewStderrLoggerWhenIntegrationTest() *Logger {
+	conf := &Config{}
+	warn := 4
+	conf.SetAddSource(true).SetLevelVar(warn)
+	return NewStderrLogger(conf)
 }

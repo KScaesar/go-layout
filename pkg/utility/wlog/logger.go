@@ -7,28 +7,77 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
-	"github.com/mattn/go-isatty"
+	slogmulti "github.com/samber/slog-multi"
 	"golang.org/x/net/context"
 )
 
 type Config struct {
-	AddSource  bool `yaml:"AddSource"`
-	JsonFormat bool `yaml:"JsonFormat"`
-
 	// Debug = -4
 	// Info  = 0
 	// Warn  = 4
 	// Error = 8
-	Level_ int `yaml:"Level"`
+	Level *int `yaml:"Level"`
+
+	AddSource  *bool  `yaml:"AddSource"`
+	JsonFormat *bool  `yaml:"JsonFormat"`
+	Filename   string `yaml:"Filename"`
+
+	Formats  []FormatFunc   `yaml:"-" json:"-"`
+	LevelVar *slog.LevelVar `yaml:"-" json:"-"`
 }
 
-func (conf Config) Level() slog.Level {
-	return slog.Level(conf.Level_)
+func (conf *Config) defaultValue() {
+	if conf.AddSource == nil {
+		conf.SetAddSource(false)
+	}
+
+	if conf.JsonFormat == nil {
+		conf.SetJsonFormat(false)
+	}
+
+	if conf.Formats == nil {
+		conf.SetFormats(DefaultFormat()...)
+	}
+
+	if conf.LevelVar == nil {
+		if conf.Level == nil {
+			info := 0
+			conf.Level = &info
+		}
+		conf.SetLevelVar(*conf.Level)
+	}
 }
 
-func NewLogger(w io.Writer, conf *Config, formats ...FormatFunc) *Logger {
+func (conf *Config) SetAddSource(add bool) *Config {
+	conf.AddSource = &add
+	return conf
+}
+
+func (conf *Config) SetJsonFormat(json bool) *Config {
+	conf.JsonFormat = &json
+	return conf
+}
+
+func (conf *Config) SetFormats(formats ...FormatFunc) *Config {
+	conf.Formats = formats
+	return conf
+}
+
+func (conf *Config) SetLevelVar(level int) *Config {
+	conf.Level = &level
+	lvl := &slog.LevelVar{}
+	lvl.Set(slog.Level(*conf.Level))
+	conf.LevelVar = lvl
+	return conf
+}
+
+//
+
+func NewHandler(w io.Writer, noColor bool, conf *Config) slog.Handler {
+	conf.defaultValue()
+
 	stdReplace := func(groups []string, a slog.Attr) slog.Attr {
-		for _, format := range formats {
+		for _, format := range conf.Formats {
 			attr, ok := format(groups, a)
 			if ok {
 				return attr
@@ -37,34 +86,30 @@ func NewLogger(w io.Writer, conf *Config, formats ...FormatFunc) *Logger {
 		return a
 	}
 
-	lvl := &slog.LevelVar{}
-	lvl.Set(conf.Level())
-
 	var handler slog.Handler
-	if conf.JsonFormat {
+	if *conf.JsonFormat {
 		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{
-			AddSource:   conf.AddSource,
-			Level:       lvl,
+			AddSource:   *conf.AddSource,
+			Level:       conf.LevelVar,
 			ReplaceAttr: stdReplace,
 		})
 	} else {
-		noColor := true
-		fd, ok := w.(interface{ Fd() uintptr })
-		if ok {
-			noColor = !isatty.IsTerminal(fd.Fd())
-		}
 		handler = tint.NewHandler(w, &tint.Options{
-			AddSource:   conf.AddSource,
-			Level:       lvl,
+			AddSource:   *conf.AddSource,
+			Level:       conf.LevelVar,
 			ReplaceAttr: stdReplace,
 			TimeFormat:  time.RFC3339,
 			NoColor:     noColor,
 		})
 	}
 
+	return handler
+}
+
+func NewLogger(lvl *slog.LevelVar, handlers ...slog.Handler) *Logger {
 	return &Logger{
 		lvl:    lvl,
-		Logger: slog.New(handler),
+		Logger: slog.New(slogmulti.Fanout(handlers...)),
 	}
 }
 

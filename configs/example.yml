@@ -36,7 +36,9 @@ O11Y:
 Logger:
   # Debug = -4
   # Info  = 0
-  Level: -4
+  Level: 0
+
+  Filename: ""
 
   JsonFormat: false
 

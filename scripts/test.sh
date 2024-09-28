@@ -26,10 +26,12 @@ function help() {
   echo "  $0 --mode ci --tags integration"
 }
 
-if [ -n "$UT_WORK_DIR" ]; then
+set +u
+if [ -n $UT_WORK_DIR ]; then
     echo "Changing directory to UT_WORK_DIR=$UT_WORK_DIR"
     cd "$UT_WORK_DIR"
 fi
+set -u
 
 MODE=""
 TAGS=""

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"sync/atomic"
@@ -15,18 +16,51 @@ func init() {
 }
 
 // Init initializes the necessary default global variables
-func Init(conf *Config) {
-	logger := wlog.NewLogger(os.Stdout, &conf.Logger, wlog.DefaultFormat()...)
+func Init(conf *Config) io.Closer {
+	var err error
+	defer func() {
+		if err != nil {
+			os.Exit(1)
+		}
+	}()
+
+	logWriter, err := initLogger(&conf.Logger)
+	if err != nil {
+		Logger().Error("init logger fail", slog.Any("err", err))
+		return nil
+	}
+
+	Logger().Debug("show config", slog.Any("conf", conf))
+	// ErrorRegistry().ShowErrors()
+
+	err = utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
+	if err != nil {
+		Logger().Error("init o11y tracer fail", slog.Any("err", err))
+		return nil
+	}
+
+	return logWriter
+}
+
+func initLogger(conf *wlog.Config) (w io.WriteCloser, err error) {
+	var logger *wlog.Logger
+
+	if conf.Filename != "" {
+		w, err = wlog.NewRotateWriter(conf.Filename, -1)
+		if err != nil {
+			return
+		}
+		logger = wlog.NewFileLogger(w, conf)
+	} else {
+		w = os.Stderr
+		logger = wlog.NewConsoleLogger(w, conf)
+	}
+
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
 	Logger().PointToNew(logger)
 	Logger().SetStdDefaultLevel()
 	Logger().SetStdDefaultLogger()
-
-	err := utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
-	if err != nil {
-		logger.Error("init o11y tracer fail", slog.Any("err", err))
-		os.Exit(1)
-	}
+	return
 }
 
 // 大部分的情況不允許 pkg目錄 以外的程式碼
@@ -43,7 +77,7 @@ func Init(conf *Config) {
 // 不應該替換 defaultLogger 指標, 而是變改指向的物件 PointToNew
 // 這樣才可以讓 shutdown 使用的 logger 也改變行為
 
-var defaultLogger = wlog.NewLoggerWhenNormalRun(false)
+var defaultLogger = wlog.NewStderrLoggerWhenNormal(false)
 
 func Logger() *wlog.Logger {
 	return defaultLogger

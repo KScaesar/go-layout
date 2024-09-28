@@ -7,26 +7,26 @@ Type=simple
 OOMScoreAdjust=-500
 LimitNOFILE=65536
 TimeoutStartSec=60s
-User=myuser
-Group=mygroup
+User=caesar
+Group=caesar
 
 #Environment=ENV_VAR_NAME=value
 ExecStart=/usr/local/bin/myapp
-WorkingDirectory=/opt/myapp/
+WorkingDirectory=/home/caesar/myapp/
 
-SyslogIdentifier=myapp
-StandardOutput=syslog
-StandardError=syslog
+#SyslogIdentifier=myapp
+#StandardOutput=journal
+#StandardError=journal
 
-#StandardOutput=append:/var/log/myapp/biz.log
-#StandardError=append:/var/log/myapp/ops.log
+StandardOutput=append:/var/log/myapp/stdout.log
+StandardError=append:/var/log/myapp/stderr.log
 
 #ExecReload=/usr/local/bin/myapp --reload
-#ExecReload=/bin/kill -HUP $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
 
 #ExecStop=/usr/local/bin/myapp --shutdown
 
-Restart=on-failure
+#Restart=on-failure
 #RestartPreventExitStatus=2 3
 
 SendSIGKILL=no

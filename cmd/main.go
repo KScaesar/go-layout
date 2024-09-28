@@ -11,31 +11,33 @@ import (
 )
 
 func init() {
-	logger := wlog.NewLoggerWhenNormalRun(true)
+	logger := wlog.NewStderrLoggerWhenNormal(true)
 	logger.Logger = logger.With(slog.Any("version", pkg.Version()))
 	pkg.Logger().PointToNew(logger)
 }
 
 func main() {
-	conf := pkg.MustLoadConfig()
-
-	// Init is required before get default global variables
-	pkg.Init(conf)
-	logger := pkg.Logger()
-	shutdown := pkg.Shutdown()
-
-	go shutdown.Serve()
 	var err error
 	defer func() {
 		if err != nil {
-			shutdown.Notify(err)
-			<-shutdown.WaitChannel()
 			os.Exit(1)
 		}
 	}()
 
-	logger.Debug("show config", slog.Any("conf", conf))
-	pkg.ErrorRegistry().ShowErrors()
+	conf := pkg.MustLoadConfig()
+
+	// Init is required before get default global variables
+	logWriter := pkg.Init(conf)
+	defer logWriter.Close()
+
+	shutdown := pkg.Shutdown()
+	go shutdown.Serve()
+	defer func() {
+		if err != nil {
+			shutdown.Notify(err)
+			<-shutdown.WaitChannel()
+		}
+	}()
 
 	infra, err := inject.NewInfra(conf)
 	if err != nil {
@@ -45,7 +47,7 @@ func main() {
 	mux := inject.NewGinRouter(conf, infra.MySql, svc)
 
 	// server start
-	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, logger.Logger)
+	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, pkg.Logger().Logger)
 	inject.ServeGin(conf.Http.Port, mux)
 
 	<-shutdown.WaitChannel()
