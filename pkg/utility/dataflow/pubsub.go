@@ -12,4 +12,5 @@ type Producer interface {
 
 type Consumer interface {
 	Listen() (err error)
+	Stop() error
 }

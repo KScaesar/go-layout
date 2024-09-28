@@ -69,15 +69,10 @@ type Message struct {
 	Metadata maputil.Data
 
 	RawInfra any
+	reply    Reply
+	pingpong chan struct{}
 
 	Ctx context.Context
-}
-
-func (msg *Message) UpdateContext(updates ...func(ctx context.Context) context.Context) context.Context {
-	for _, update := range updates {
-		msg.Ctx = update(msg.Ctx)
-	}
-	return msg.Ctx
 }
 
 func (msg *Message) MsgId() string {
@@ -105,6 +100,9 @@ func (msg *Message) reset() {
 	}
 
 	msg.RawInfra = nil
+	msg.reply.mq = nil
+	msg.pingpong = nil
+
 	msg.Ctx = context.Background()
 }
 
@@ -124,6 +122,28 @@ func (msg *Message) Copy() *Message {
 	}
 
 	message.RawInfra = msg.RawInfra
+	message.reply = msg.reply
+	message.pingpong = msg.pingpong
+
 	message.Ctx = msg.Ctx
 	return message
+}
+
+func (msg *Message) Reply() Reply {
+	if msg.reply.mq == nil {
+		msg.reply = NewReply(1)
+	}
+	return msg.reply
+}
+
+func (msg *Message) SetReply(r Reply) {
+	msg.reply = r
+}
+
+func (msg *Message) AckPingPong() {
+	msg.pingpong <- struct{}{}
+}
+
+func (msg *Message) SetPingpong(pingpong chan struct{}) {
+	msg.pingpong = pingpong
 }
