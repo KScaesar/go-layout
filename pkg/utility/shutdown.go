@@ -39,7 +39,7 @@ func EasyShutdownWithCtx(
 //   - waitSeconds:
 //     Specifies the maximum number of seconds to wait for the shutdown process to complete.
 //     If this time elapses, the system will forcefully terminate regardless of the shutdown process's state.
-//     A value of 0 means it will wait indefinitely.
+//     A value <= 0 indicates it will wait permanently.
 func NewShutdown(countdown context.Context, waitSeconds int, logger *slog.Logger) *Shutdown {
 	osSig := make(chan os.Signal, 2)
 	signal.Notify(osSig, syscall.SIGINT, syscall.SIGTERM)
