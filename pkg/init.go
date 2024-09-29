@@ -33,6 +33,8 @@ func Init(conf *Config) io.Closer {
 	Logger().Debug("show config", slog.Any("conf", conf))
 	// ErrorRegistry().ShowErrors()
 
+	go Shutdown().Serve()
+
 	err = utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
 	if err != nil {
 		Logger().Error("init o11y tracer fail", slog.Any("err", err))

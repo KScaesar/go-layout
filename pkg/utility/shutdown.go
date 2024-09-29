@@ -204,17 +204,17 @@ func (s *Shutdown) terminate() {
 					slog.String("component", component),
 				)
 
-				logger.Info("shutdown start")
+				logger.Info("terminate start")
 				start := time.Now()
 
 				err := s.actions[priority][component]()
 				if err != nil {
-					logger.Error("shutdown fail", slog.Any("err", err))
+					logger.Error("terminate fail", slog.Any("err", err))
 					return
 				}
 
 				duration := time.Since(start)
-				logger.Info("shutdown finish", slog.String("duration", duration.String()))
+				logger.Info("terminate finish", slog.String("duration", duration.String()))
 
 			}(seq)
 		}

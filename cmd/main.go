@@ -31,7 +31,6 @@ func main() {
 	defer logWriter.Close()
 
 	shutdown := pkg.Shutdown()
-	go shutdown.Serve()
 	defer func() {
 		if err != nil {
 			shutdown.Notify(err)
