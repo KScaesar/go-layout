@@ -149,6 +149,9 @@ func (s *Shutdown) Serve() {
 				slog.Any("err", err),
 			)
 		}
+
+	case <-s.done:
+		return
 	}
 
 	s.mu.Lock()
