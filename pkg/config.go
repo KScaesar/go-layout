@@ -29,27 +29,34 @@ func MustLoadConfig() *Config {
 }
 
 type Config struct {
-	ServiceId_ string       `yaml:"ServiceId"`
-	Hack       utility.Hack `yaml:"Hack"`
+	AppId_      string       `yaml:"AppId"`
+	Hack        utility.Hack `yaml:"Hack"`
+	ShowErrCode bool         `yaml:"ShowErrCode"`
 
-	Http  Http  `yaml:"Http"`
-	MySql MySql `yaml:"MySql"`
-	Redis Redis `yaml:"Redis"`
+	Filename Filename `yaml:"Filename"`
+	Http     Http     `yaml:"Http"`
+	MySql    MySql    `yaml:"MySql"`
+	Redis    Redis    `yaml:"Redis"`
 
 	O11Y   utility.O11YConfig `yaml:"O11Y"`
 	Logger wlog.Config        `yaml:"Logger"`
 }
 
-func (c *Config) ServiceId() string {
-	if c.ServiceId_ == "" {
+func (c *Config) AppId() string {
+	if c.AppId_ == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
 			panic(err)
 		}
-		DefaultServiceId := hostname
-		c.ServiceId_ = DefaultServiceId
+		DefaultAppId := hostname
+		c.AppId_ = DefaultAppId
 	}
-	return c.ServiceId_
+	return c.AppId_
+}
+
+type Filename struct {
+	Logger string `yaml:"Logger"`
+	Event  string `yaml:"Event"`
 }
 
 type Http struct {

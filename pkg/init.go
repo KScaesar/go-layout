@@ -25,14 +25,16 @@ func Init(conf *Config) io.Closer {
 		}
 	}()
 
-	logWriter, err := initLogger(&conf.Logger)
+	logWriter, err := initLogger(conf.Filename.Logger, &conf.Logger)
 	if err != nil {
 		Logger().Error("init logger fail", slog.Any("err", err))
 		return nil
 	}
 
 	Logger().Debug("show config", slog.Any("conf", conf))
-	// ErrorRegistry().ShowErrors()
+	if conf.ShowErrCode {
+		ErrorRegistry().ShowErrors()
+	}
 
 	err = utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
 	if err != nil {
@@ -45,11 +47,11 @@ func Init(conf *Config) io.Closer {
 
 //
 
-func initLogger(conf *wlog.Config) (w io.WriteCloser, err error) {
+func initLogger(filename string, conf *wlog.Config) (w io.WriteCloser, err error) {
 	var logger *wlog.Logger
 
-	if conf.Filename != "" {
-		w, err = wlog.NewRotateWriter(conf.Filename, -1)
+	if filename != "" {
+		w, err = wlog.NewRotateWriter(filename, -1)
 		if err != nil {
 			return
 		}

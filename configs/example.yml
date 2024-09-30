@@ -1,14 +1,28 @@
 
 # default hostname
-ServiceId: ""
+AppId: ""
 
 Hack: ""
 
+ShowErrCode: false
+
 Http:
   Port: 8800
-
-  # if Debug is false, enable gin.ReleaseMode
   Debug: false
+
+Filename:
+  Logger: "./ops.log" # output to stderr if empty
+  Event: "./biz.log"
+
+Logger:
+  # Debug = -4
+  # Info  = 0
+  Level: 0
+
+  # print file line
+  AddSource: false
+
+  JsonFormat: false
 
 MySql:
   User: root
@@ -16,7 +30,7 @@ MySql:
   Host: localhost
   Port: 3306
   Database: testdata
-  Debug: false
+  Debug: true
 
 Redis:
   User: ""
@@ -27,21 +41,8 @@ Redis:
 O11Y:
   Port: 2112
 
-  EnableTrace: true
-
   # Optional, does not affect the main application startup if not set
   TraceHost: localhost
   TracePort: 3200
-
-Logger:
-  # Debug = -4
-  # Info  = 0
-  Level: 0
-
-  Filename: ""
-
-  JsonFormat: false
-
-  # print file line
-  AddSource: false
+  EnableTrace: false
 

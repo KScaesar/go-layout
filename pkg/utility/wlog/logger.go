@@ -18,9 +18,8 @@ type Config struct {
 	// Error = 8
 	Level *int `yaml:"Level"`
 
-	AddSource  *bool  `yaml:"AddSource"`
-	JsonFormat *bool  `yaml:"JsonFormat"`
-	Filename   string `yaml:"Filename"`
+	AddSource  *bool `yaml:"AddSource"`
+	JsonFormat *bool `yaml:"JsonFormat"`
 
 	Formats  []FormatFunc   `yaml:"-" json:"-"`
 	LevelVar *slog.LevelVar `yaml:"-" json:"-"`
