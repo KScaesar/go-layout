@@ -15,7 +15,7 @@
 report.xml
 cobertura.xml
 code-coverage.html
-*.log
+**/*.log
 
 # --- #
 
