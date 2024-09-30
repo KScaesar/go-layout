@@ -73,43 +73,22 @@ func (r Reply) Pulls() (Results []any, Err error) {
 }
 
 func (r Reply) PullsWithCtx(ctx context.Context) (Results []any, Err error) {
-	wg := &sync.WaitGroup{}
-	mu := &sync.Mutex{}
-
 	Results = make([]any, 0, r.qty)
-	ch := make(chan error, r.qty)
 
 	for i := 0; i < r.qty; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-
-			result, err := r.PullWithCtx(ctx)
-			if err != nil {
-				ch <- err
-				return
-			}
-
-			mu.Lock()
-			Results = append(Results, result)
-			mu.Unlock()
-		}()
+		result, err := r.PullWithCtx(ctx)
+		if err != nil {
+			return []any{}, err
+		}
+		Results = append(Results, result)
 	}
 
-	go func() {
-		wg.Wait()
-		ch <- nil
-	}()
-
-	if err := <-ch; err != nil {
-		return []any{}, err
-	}
 	return Results, nil
 }
 
 //
 
-// Gather 多個 Message 透過 多個 Reply 接收 response
+// Gather 多個 Message 透過 多個 Reply 接收 response, 其中 Message 和 Reply 是 1 對 1 關聯.
 func Gather(multiReply []Reply) (Results []any, Err error) {
 	return GatherWithCtx(context.Background(), multiReply)
 }
@@ -120,31 +99,40 @@ func GatherWithCtx(ctx context.Context, multiReply []Reply) (Results []any, Err 
 
 	qty := len(multiReply)
 	Results = make([]any, qty)
-	ch := make(chan error, qty)
+	ch := make(chan error)
 
-	for i, reply := range multiReply {
+	ctx, cancel := context.WithCancelCause(ctx)
+
+	for idx, reply := range multiReply {
 		wg.Add(1)
-		go func(idx int) {
+		go func() {
 			defer wg.Done()
 
 			result, err := reply.PullWithCtx(ctx)
 			if err != nil {
-				ch <- err
+				select {
+				case ch <- err:
+				default:
+				}
 				return
 			}
 
 			mu.Lock()
 			Results[idx] = result
 			mu.Unlock()
-		}(i)
+		}()
 	}
 
 	go func() {
 		wg.Wait()
-		ch <- nil
+		select {
+		case ch <- nil:
+		default:
+		}
 	}()
 
 	if err := <-ch; err != nil {
+		cancel(err)
 		return []any{}, err
 	}
 	return Results, nil
