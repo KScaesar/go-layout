@@ -10,16 +10,14 @@ import (
 	"time"
 )
 
-type FormatFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
-
-func DefaultFormat() []FormatFunc {
-	return []FormatFunc{
-		FormatKeySource(),
-		FormatKindTime(),
-		FormatKindDuration(),
-		FormatTypeFunc(),
-	}
+var DefaultFormats = []FormatFunc{
+	FormatKeySource(),
+	FormatKindTime(),
+	FormatKindDuration(),
+	FormatTypeFunc(),
 }
+
+type FormatFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
 
 func FormatKeySource() FormatFunc {
 	pool := sync.Pool{

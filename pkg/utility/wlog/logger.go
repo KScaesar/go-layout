@@ -35,7 +35,7 @@ func (conf *Config) defaultValue() {
 	}
 
 	if conf.Formats == nil {
-		conf.SetFormats(DefaultFormat()...)
+		conf.SetFormats(DefaultFormats...)
 	}
 
 	if conf.LevelVar == nil {
