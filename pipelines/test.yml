@@ -14,11 +14,14 @@ test:
     - UT_WORK_DIR=$UT_WORK_DIR ./scripts/test.sh --mode $UT_MODE --tags $UT_TAGS
 
   artifacts:
-    paths: code-coverage.html
-    when: $UT_MODE == "ci+cover"
+    paths:
+     - report.xml
+     - code-coverage.html
+    when: always
 
     reports:
       junit: report.xml
+
       coverage_report:
         coverage_format: cobertura
         path: cobertura.xml
