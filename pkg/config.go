@@ -55,8 +55,8 @@ func (c *Config) AppId() string {
 }
 
 type Filename struct {
-	Logger string `yaml:"Logger"`
-	Event  string `yaml:"Event"`
+	Logger string `yaml:"Logger"` // output to stderr if empty
+	Event  string `yaml:"Event"`  // output to stdout if empty
 }
 
 type Http struct {

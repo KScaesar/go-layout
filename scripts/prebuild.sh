@@ -25,14 +25,13 @@ sudo ln -s $WORK_DIR/$SERVICE.conf /etc/logrotate.d/$SERVICE.conf
 sudo chown root:$GROUP $WORK_DIR/$SERVICE.conf
 
 # crontab
-# Use sed to find the line with cron.daily and change the time to midnight
 if sudo sed -i '/cron\.daily/s/^\([0-9]*\) \([0-9]*\)/0 0/' /etc/crontab; then
-    echo "Successfully changed the daily job execution time to 00:00"
-    sudo grep 'cron.daily' /etc/crontab
+  echo "Successfully changed the cron.daily execution time to 00:00"
 else
-    echo "Modification failed. Exiting."
-    exit 1
+  echo "  0  0  *  *  * root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )" | sudo tee -a /etc/crontab > /dev/null
+  echo "Failed to update the cron.daily entry, a new entry has been added for 00:00"
 fi
+sudo grep 'cron.daily' /etc/crontab
 
 # update service
 sudo systemctl daemon-reload
