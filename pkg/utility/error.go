@@ -3,6 +3,7 @@ package utility
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 )
@@ -48,7 +49,7 @@ func (r *ErrorRegistry) ShowErrors() {
 //
 //	ErrInvalidParam = ErrorRegistry.
 //		AddErrorCode(4000).
-//		HttpStatus(http.StatusBadRequest).
+//		AddHttpStatus(http.StatusBadRequest).
 //		NewError("invalid parameter")
 //
 //	ErrInvalidUsername = ErrorRegistry.
@@ -72,15 +73,6 @@ func (r *ErrorRegistry) AddErrorCode(errCode int) *ErrorRegistry {
 	return r
 }
 
-// HttpStatus is Optional Field
-func (r *ErrorRegistry) HttpStatus(httpStatus int) *ErrorRegistry {
-	if r.target == nil {
-		panic(panicTextOfErrorRegistry)
-	}
-	r.target.httpStatus = httpStatus
-	return r
-}
-
 func (r *ErrorRegistry) NewError(description string) error {
 	if r.target == nil {
 		panic(panicTextOfErrorRegistry)
@@ -92,57 +84,71 @@ func (r *ErrorRegistry) NewError(description string) error {
 	return err
 }
 
-// WrapError
-// 內部實作透過 fmt.Errorf 另外包裝 error, 模擬繼承的概念,
-// 將 baseError 的 Optional Field 自動複製到新的 error
+// WrapError 透過 fmt.Errorf 包裝 error
 func (r *ErrorRegistry) WrapError(description string, baseError error) error {
 	if r.target == nil {
 		panic(panicTextOfErrorRegistry)
 	}
 	r.target.cause = fmt.Errorf("%v: %w", description, baseError)
-	r.copyOptionalFieldsFrom(baseError)
+	r.target.copyFrom(baseError)
 
 	err := r.target
 	r.target = nil
 	return err
 }
 
-func (r *ErrorRegistry) copyOptionalFieldsFrom(baseError error) {
-	if r.target.httpStatus == 0 {
-		myErr, ok := UnwrapCustomError(baseError)
-		if ok {
-			r.target.httpStatus = myErr.httpStatus
-		}
+func (r *ErrorRegistry) AddHttpStatus(httpStatus int) *ErrorRegistry {
+	if r.target == nil {
+		panic(panicTextOfErrorRegistry)
 	}
+	r.target.httpStatus = httpStatus
+	return r
 }
 
 //
+
+var ErrUnknown = &CustomError{
+	cause:      errors.New("unknown error"),
+	errCode:    -1,
+	httpStatus: http.StatusInternalServerError,
+}
 
 func UnwrapCustomError(err error) (myErr *CustomError, ok bool) {
 	if errors.As(err, &myErr) {
 		return myErr, true
 	}
-	return nil, false
+	return ErrUnknown, false
 }
 
 type CustomError struct {
-	errCode    int
+	cause   error
+	errCode int
+
+	// Optional Field
 	httpStatus int
-	cause      error
 }
 
 func (c *CustomError) Error() string {
 	return c.cause.Error()
 }
 
+// ErrorCode 必須有明確定義，才可視為系統規範內的錯誤, 否則視為 ErrUnknown
 func (c *CustomError) ErrorCode() int {
 	return c.errCode
 }
 
-func (c *CustomError) HttpStatus() int {
-	return c.httpStatus
-}
-
 func (c *CustomError) Unwrap() error {
 	return c.cause
+}
+
+// 將 baseErr 的 Optional Field 進行複製, 想模擬繼承的概念
+func (c *CustomError) copyFrom(baseErr error) {
+	Err, _ := UnwrapCustomError(baseErr)
+	if c.httpStatus == 0 {
+		c.httpStatus = Err.httpStatus
+	}
+}
+
+func (c *CustomError) HttpStatus() int {
+	return c.httpStatus
 }

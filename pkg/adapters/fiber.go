@@ -8,24 +8,33 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/KScaesar/go-layout/pkg"
+	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
-func FiberErrorHandler(c *fiber.Ctx, err error) error {
-	myErr := pkg.UnwrapError(err)
-	if myErr.ErrorCode() == pkg.ErrCodeUndefined {
-		Err, isFixed := fixUndefinedError(err)
+func HandleFiberError(c *fiber.Ctx, err error) error {
+	myErr, ok := utility.UnwrapCustomError(err)
+	if !ok {
+		Err, isFixed := fixUnknownError(err)
 		if isFixed {
+			myErr, ok = utility.UnwrapCustomError(Err)
 			err = Err
-			myErr = pkg.UnwrapError(err)
-		} else {
-			logger := pkg.Logger().CtxGetLogger(c.UserContext())
-			logger.Warn("capture undefined error", slog.Any("err", err))
 		}
 	}
-	return c.Status(myErr.HttpStatus()).JSON(fiber.Map{"msg": err.Error()})
+
+	// double check fix result
+	if !ok {
+		logger := pkg.Logger().CtxGetLogger(c.UserContext())
+		logger.Warn("capture unknown error", slog.Any("err", err))
+	}
+
+	DefaultErrorResponse := fiber.Map{
+		"code": myErr.ErrorCode(),
+		"msg":  err.Error(),
+	}
+	return c.Status(myErr.HttpStatus()).JSON(DefaultErrorResponse)
 }
 
-func fixUndefinedError(err error) (Err error, isFixed bool) {
+func fixUnknownError(err error) (Err error, isFixed bool) {
 	var fiberErr *fiber.Error
 
 	switch {

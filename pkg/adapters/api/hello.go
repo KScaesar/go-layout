@@ -36,11 +36,11 @@ func HelloFiber() fiber.Handler {
 		logger := pkg.Logger().CtxGetLogger(c.UserContext())
 
 		// err := nil
-		// err := fmt.Errorf("username must be have a upper letter: %w", pkg.ErrInvalidParam)
 		err := pkg.ErrInvalidUsername
 		if err != nil {
 			logger.Error("hello fail", slog.Any("err", err))
-			return adapters.FiberErrorHandler(c, err)
+			err = adapters.HandleFiberError(c, err)
+			return err
 		}
 
 		logger.Info("hello fiber")

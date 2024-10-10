@@ -43,11 +43,13 @@ func main() {
 		return
 	}
 	svc := inject.NewService(conf, infra)
-	mux := inject.NewGinRouter(conf, infra.MySql, svc)
+	mux := inject.NewFiberRouter(conf, infra.MySql, svc)
+	// mux := inject.NewGinRouter(conf, infra.MySql, svc)
 
 	// server start
 	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, pkg.Logger().Logger)
-	inject.ServeGin(conf.Http.Port, mux)
+	inject.ServeFiber(conf.Http.Port, conf.Http.Debug, mux)
+	// inject.ServeGin(conf.Http.Port, mux)
 
 	<-shutdown.WaitChannel()
 }

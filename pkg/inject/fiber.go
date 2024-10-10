@@ -21,14 +21,14 @@ import (
 // 比如 api route 找不到, 依靠 config.ErrorHandler 進行處理
 //
 // 2. 商業邏輯 service layer 錯誤:
-// 每個 api handler 都必須手動呼叫 adapters.FiberErrorHandler
+// 每個 api handler 都必須手動呼叫 adapters.HandleFiberError
 // 商業邏輯錯誤無法依靠 config.ErrorHandler 進行集中處理的原因, 有兩個因素互相影響:
 //
 //	2-1. 所有 mw 執行後 config.ErrorHandler 才會執行. 但 mw 在 handler 之後, 必須取得 http code
 //	2-2. middleware 無法取得 handler route, ref: https://github.com/gofiber/fiber/issues/3138
 func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 	router := fiber.New(fiber.Config{
-		ErrorHandler:          adapters.FiberErrorHandler,
+		ErrorHandler:          adapters.HandleFiberError,
 		AppName:               pkg.Version().ServiceName,
 		DisableStartupMessage: true,
 	})
