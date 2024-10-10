@@ -7,9 +7,10 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
+var key string
+
 func main() {
-	var key string
-	if len(os.Args) > 1 {
+	if len(key) == 0 && len(os.Args) > 1 {
 		key = os.Args[1]
 	}
 	hack := utility.Hack(key)
