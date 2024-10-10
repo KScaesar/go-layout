@@ -48,17 +48,9 @@ func Init(conf *Config) io.Closer {
 //
 
 func initLogger(filename string, conf *wlog.Config) (w io.WriteCloser, err error) {
-	var logger *wlog.Logger
-
-	if filename != "" {
-		w, err = wlog.NewRotateWriter(filename, -1)
-		if err != nil {
-			return
-		}
-		logger = wlog.NewFileLogger(w, conf)
-	} else {
-		w = os.Stderr
-		logger = wlog.NewConsoleLogger(w, conf)
+	logger, w, err := wlog.NewSmartLogger(filename, conf)
+	if err != nil {
+		return nil, err
 	}
 
 	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))

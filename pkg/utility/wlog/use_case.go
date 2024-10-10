@@ -5,6 +5,21 @@ import (
 	"os"
 )
 
+// NewSmartLogger 依照輸入值判斷使用哪一種類型的 Logger
+func NewSmartLogger(filename string, conf *Config) (logger *Logger, w io.WriteCloser, err error) {
+	if filename != "" {
+		w, err = NewRotateWriter(filename, -1)
+		if err != nil {
+			return nil, nil, err
+		}
+		logger = NewFileLogger(w, conf)
+	} else {
+		w = os.Stderr
+		logger = NewConsoleLogger(w, conf)
+	}
+	return logger, w, nil
+}
+
 func NewFileLogger(w io.Writer, conf *Config) *Logger {
 	handler := NewHandler(w, true, conf)
 	return NewLogger(conf.LevelVar, handler)
