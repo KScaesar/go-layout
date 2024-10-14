@@ -12,7 +12,7 @@ import (
 
 func ChangeLoggerLevel(hack utility.Hack, wlogger *wlog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !hack.Challenge(c.Query("hack_level")) {
+		if !hack.Challenge(c.Query("hack")) {
 			return
 		}
 
