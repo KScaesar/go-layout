@@ -161,7 +161,6 @@ func (w *RotateWriter) signalRotate() {
 		case <-ticker.C:
 			if w.isClosed {
 				ticker.Stop()
-				w.mu.Unlock()
 				return
 			}
 		}
