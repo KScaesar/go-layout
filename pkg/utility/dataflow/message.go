@@ -141,9 +141,12 @@ func (msg *Message) SetReply(r Reply) {
 }
 
 func (msg *Message) AckPingPong() {
+	if msg.pingpong == nil {
+		panic("pingpong channel is nil")
+	}
 	msg.pingpong <- struct{}{}
 }
 
-func (msg *Message) SetPingpong(pingpong chan struct{}) {
+func (msg *Message) SetPingPong(pingpong chan struct{}) {
 	msg.pingpong = pingpong
 }
