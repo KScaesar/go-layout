@@ -50,7 +50,7 @@ func (r Reply) PushWithCtx(ctx context.Context, Result any, Err error) (err erro
 	return err
 }
 
-// Pull 一個 Message 透過 一個 Reply 接收 response
+// Pull 代表的意思是, Producer 透過 一個 Reply 取得 一個 Message 的 response
 func (r Reply) Pull() (Result any, Err error) {
 	return r.PullWithCtx(context.Background())
 }
@@ -67,7 +67,7 @@ func (r Reply) PullWithCtx(ctx context.Context) (Result any, Err error) {
 	return
 }
 
-// Pulls 多個 Message 透過 一個 Reply 接收 response
+// Pulls 代表的意思是, Producer 透過 一個 Reply 取得 多個 Message 的 response
 func (r Reply) Pulls() (Results []any, Err error) {
 	return r.PullsWithCtx(context.Background())
 }
@@ -88,7 +88,7 @@ func (r Reply) PullsWithCtx(ctx context.Context) (Results []any, Err error) {
 
 //
 
-// Gather 多個 Message 透過 多個 Reply 接收 response, 其中 Message 和 Reply 是 1 對 1 關聯.
+// Gather 代表的意思是, Producer 透過 多個 Reply 取得 多個 Message 的 response, 其中 Message 和 Reply 是 1 對 1 關聯
 func Gather(multiReply []Reply) (Results []any, Err error) {
 	return GatherWithCtx(context.Background(), multiReply)
 }
