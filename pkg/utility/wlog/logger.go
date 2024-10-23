@@ -20,6 +20,7 @@ type Config struct {
 
 	AddSource  *bool `yaml:"AddSource"`
 	JsonFormat *bool `yaml:"JsonFormat"`
+	NoColor    *bool `yaml:"NoColor"`
 
 	Formats  []FormatFunc   `yaml:"-" json:"-"`
 	LevelVar *slog.LevelVar `yaml:"-" json:"-"`
@@ -32,6 +33,10 @@ func (conf *Config) defaultValue() {
 
 	if conf.JsonFormat == nil {
 		conf.SetJsonFormat(false)
+	}
+
+	if conf.NoColor == nil {
+		conf.SetNoColor(true)
 	}
 
 	if conf.Formats == nil {
@@ -57,6 +62,11 @@ func (conf *Config) SetJsonFormat(json bool) *Config {
 	return conf
 }
 
+func (conf *Config) SetNoColor(noColor bool) *Config {
+	conf.NoColor = &noColor
+	return conf
+}
+
 func (conf *Config) SetFormats(formats ...FormatFunc) *Config {
 	conf.Formats = formats
 	return conf
@@ -72,10 +82,10 @@ func (conf *Config) SetLevelVar(level int) *Config {
 
 //
 
-func NewHandler(w io.Writer, noColor bool, conf *Config) slog.Handler {
+func NewHandler(w io.Writer, conf *Config) slog.Handler {
 	conf.defaultValue()
 
-	stdReplace := func(groups []string, a slog.Attr) slog.Attr {
+	replace := func(groups []string, a slog.Attr) slog.Attr {
 		for _, format := range conf.Formats {
 			attr, ok := format(groups, a)
 			if ok {
@@ -90,15 +100,15 @@ func NewHandler(w io.Writer, noColor bool, conf *Config) slog.Handler {
 		handler = slog.NewJSONHandler(w, &slog.HandlerOptions{
 			AddSource:   *conf.AddSource,
 			Level:       conf.LevelVar,
-			ReplaceAttr: stdReplace,
+			ReplaceAttr: replace,
 		})
 	} else {
 		handler = tint.NewHandler(w, &tint.Options{
 			AddSource:   *conf.AddSource,
 			Level:       conf.LevelVar,
-			ReplaceAttr: stdReplace,
+			ReplaceAttr: replace,
 			TimeFormat:  time.RFC3339,
-			NoColor:     noColor,
+			NoColor:     *conf.NoColor,
 		})
 	}
 

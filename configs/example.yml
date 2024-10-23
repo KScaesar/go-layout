@@ -12,7 +12,7 @@ Http:
 
 Filename:
   Logger: "./ops.log" # output to stderr if empty
-  Event: "./biz.log"
+  Event: "./event.log"  # output to stdout if empty
 
 Logger:
   # Debug = -4
@@ -23,6 +23,7 @@ Logger:
   AddSource: false
 
   JsonFormat: false
+  NoColor: false
 
 MySql:
   User: root

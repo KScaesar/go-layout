@@ -41,9 +41,8 @@ func NewRotateWriter(filename string, bufSize int) (io.WriteCloser, error) {
 	}
 
 	conf := &Config{}
-	conf.defaultValue()
-	handler := NewHandler(os.Stderr, true, conf)
-	logger := NewLogger(conf.LevelVar, handler)
+	conf.SetJsonFormat(true)
+	logger := NewStderrLogger(conf)
 
 	w := &RotateWriter{
 		filename: filename,

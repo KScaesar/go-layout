@@ -48,7 +48,7 @@ func Init(conf *Config) io.Closer {
 //
 
 func initLogger(filename string, conf *wlog.Config) (w io.WriteCloser, err error) {
-	logger, w, err := wlog.NewSmartLogger(filename, conf)
+	logger, w, err := wlog.LoggerFactory(filename, conf)
 	if err != nil {
 		return nil, err
 	}
