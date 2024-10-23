@@ -34,8 +34,8 @@ func main() {
 	defer func() {
 		if err != nil {
 			shutdown.Notify(err)
-			<-shutdown.WaitChannel()
 		}
+		<-shutdown.WaitChannel()
 	}()
 
 	infra, err := inject.NewInfra(conf)
@@ -50,6 +50,4 @@ func main() {
 	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, pkg.Logger().Logger)
 	inject.ServeFiber(conf.Http.Port, conf.Http.Debug, mux)
 	// inject.ServeGin(conf.Http.Port, mux)
-
-	<-shutdown.WaitChannel()
 }
