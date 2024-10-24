@@ -81,9 +81,8 @@ func (mux *Mux) PostMiddleware(handleFuncs ...HandleFunc) *Mux {
 }
 
 // Transform
-// Originally, the message passed through the mux would only call 'getSubject' once.
-// However, if there is a definition of Transform,
-// when the message passes through the Transform function, 'getSubject' will be called again.
+// when executing trie.handleMessage will re-fetch Message.Subject
+// or update Message.Bytes after executing the transform function
 func (mux *Mux) Transform(transform HandleFunc) *Mux {
 	param := &paramHandler{
 		transform: transform,
