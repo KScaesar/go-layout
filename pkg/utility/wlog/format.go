@@ -3,6 +3,7 @@ package wlog
 import (
 	"bytes"
 	"log/slog"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -76,7 +77,8 @@ func FormatTypeFunc() FormatFunc {
 			if rv.Kind() != reflect.Func {
 				return a, false
 			}
-			a.Value = slog.StringValue(runtime.FuncForPC(rv.Pointer()).Name())
+			fnName := runtime.FuncForPC(rv.Pointer()).Name()
+			a.Value = slog.StringValue(filepath.Base(fnName))
 			return a, true
 		}
 		return a, false
