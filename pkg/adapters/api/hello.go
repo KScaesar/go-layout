@@ -39,7 +39,7 @@ func HelloFiber() fiber.Handler {
 		err := pkg.ErrInvalidUsername
 		if err != nil {
 			logger.Error("hello fail", slog.Any("err", err))
-			err = adapters.HandleFiberError(c, err)
+			err = adapters.HandleErrorByFiber(c, err)
 			return err
 		}
 

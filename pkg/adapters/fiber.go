@@ -11,7 +11,7 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
-func HandleFiberError(c *fiber.Ctx, err error) error {
+func HandleErrorByFiber(c *fiber.Ctx, err error) error {
 	myErr, ok := utility.UnwrapCustomError(err)
 	if !ok {
 		Err, isFixed := fixUnknownError(err)
@@ -54,4 +54,15 @@ func fixFiberError(err *fiber.Error) (error, bool) {
 		return fmt.Errorf("%w: %w", pkg.ErrNotExists, err), true
 	}
 	return err, false
+}
+
+//
+
+func ParseQueryByFiber(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
+	err := c.QueryParser(req)
+	if err != nil {
+		logger.Error(err.Error(), slog.Any("cause", c.QueryParser))
+		return false, HandleErrorByFiber(c, pkg.ErrInvalidParam)
+	}
+	return true, nil
 }
