@@ -38,7 +38,7 @@ func O11YTrace(enableTrace bool) fiber.Handler {
 }
 
 func O11YMetric(svcName string) fiber.Handler {
-	// Throughput
+	// metric2-a
 	HttpRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: svcName,
 		Subsystem: "http",
@@ -46,28 +46,30 @@ func O11YMetric(svcName string) fiber.Handler {
 		Help:      "Total number of HTTP requests",
 	}, []string{"method", "route"})
 
+	// metric2-b
 	HttpErrorsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: svcName,
 		Subsystem: "http",
 		Name:      "requests_total_errors",
 		Help:      "Total number of HTTP errors",
-	}, []string{"method", "route", "code"})
+	}, []string{"code", "method", "route"})
 
+	// metric3
 	HttpRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: svcName,
 		Subsystem: "http",
 		Name:      "requests_in_flight",
-		Help:      "The number of inflight requests being handled at the same time",
+		Help:      "The number of inflight Http requests being handled at the same time",
 	}, []string{"method", "route"})
 
-	// Latency
+	// metric1
 	HttpResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: svcName,
 		Subsystem: "http",
 		Name:      "request_duration_seconds",
 		Help:      "Histogram of response time for HTTP in seconds",
 		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
-	}, []string{"method", "route", "code"})
+	}, []string{"code", "method", "route"})
 
 	return func(c *fiber.Ctx) error {
 		method := c.Method()
@@ -76,7 +78,7 @@ func O11YMetric(svcName string) fiber.Handler {
 		// metric1
 		start := time.Now()
 
-		// metric2
+		// metric2-a
 		HttpRequestsTotal.WithLabelValues(method, route).Inc()
 
 		// metric3
@@ -87,10 +89,10 @@ func O11YMetric(svcName string) fiber.Handler {
 		// metric3
 		HttpRequestsInflight.WithLabelValues(method, route).Add(-1)
 
-		// metric2
+		// metric2-b
 		code := strconv.Itoa(c.Response().StatusCode())
 		if code[0] == '4' || code[0] == '5' {
-			HttpErrorsTotal.WithLabelValues(method, route, code).Inc()
+			HttpErrorsTotal.WithLabelValues(code, method, route).Inc()
 		}
 
 		// metric1
@@ -99,9 +101,9 @@ func O11YMetric(svcName string) fiber.Handler {
 		traceId := span.SpanContext().TraceID()
 		if traceId.IsValid() {
 			traceLabels := prometheus.Labels{"trace_id": traceId.String()}
-			HttpResponseSecond.WithLabelValues(method, route, code).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
+			HttpResponseSecond.WithLabelValues(code, method, route).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
 		} else {
-			HttpResponseSecond.WithLabelValues(method, route, code).Observe(duration)
+			HttpResponseSecond.WithLabelValues(code, method, route).Observe(duration)
 		}
 
 		return err
