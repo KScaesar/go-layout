@@ -45,7 +45,7 @@ func NewStderrLoggerWhenDebug() *Logger {
 	return NewStderrLogger(conf)
 }
 
-func NewStderrLoggerWhenIntegrationTest() *Logger {
+func NewStderrLoggerWhenTesting() *Logger {
 	conf := &Config{}
 	warn := 4
 	conf.SetAddSource(true).
