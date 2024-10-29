@@ -43,8 +43,12 @@ func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 		o11yLogger1,
 	)
 
-	router.Get("/:id", o11yMetric, o11yLogger2, transaction, api.HelloFiber())
-	router.Get("/logger/level", o11yMetric, o11yLogger2, wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))
+	fixFiberIssue3138 := func(handler fiber.Handler) []fiber.Handler {
+		return []fiber.Handler{o11yMetric, o11yLogger2, transaction, handler}
+	}
+
+	router.Get("/:id", fixFiberIssue3138(api.HelloFiber())...)
+	router.Get("/logger/level", fixFiberIssue3138(wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))...)
 
 	return router
 }

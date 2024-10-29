@@ -10,19 +10,19 @@ import (
 )
 
 func NewBodyEgress(subject string, body any) *Message {
-	message := GetMessage()
+	egress := GetMessage()
 
-	message.Subject = subject
-	message.Body = body
-	return message
+	egress.Subject = subject
+	egress.Body = body
+	return egress
 }
 
 func NewBytesEgress(subject string, bMessage []byte) *Message {
-	message := GetMessage()
+	egress := GetMessage()
 
-	message.Subject = subject
-	message.Bytes = bMessage
-	return message
+	egress.Subject = subject
+	egress.Bytes = bMessage
+	return egress
 }
 
 func GetMessage() *Message {

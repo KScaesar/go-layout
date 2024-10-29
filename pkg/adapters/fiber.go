@@ -140,9 +140,9 @@ func dataflowO11YMetric() dataflow.Middleware {
 	}, []string{"err_code", "subject"})
 
 	return func(next dataflow.HandleFunc) dataflow.HandleFunc {
-		return func(msg *dataflow.Message, dep any) error {
-			c := msg.RawInfra.(*fiber.Ctx)
-			subject := msg.Subject
+		return func(ingress *dataflow.Message, dep any) error {
+			c := ingress.RawInfra.(*fiber.Ctx)
+			subject := ingress.Subject
 
 			// metric1
 			start := time.Now()
@@ -153,7 +153,7 @@ func dataflowO11YMetric() dataflow.Middleware {
 			// metric3
 			RPCRequestsInflight.WithLabelValues(subject).Add(1)
 
-			err := next(msg, dep)
+			err := next(ingress, dep)
 
 			// metric3
 			RPCRequestsInflight.WithLabelValues(subject).Add(-1)
@@ -166,7 +166,7 @@ func dataflowO11YMetric() dataflow.Middleware {
 
 			// metric1
 			duration := time.Since(start).Seconds()
-			span := trace.SpanFromContext(msg.Ctx)
+			span := trace.SpanFromContext(ingress.Ctx)
 			traceId := span.SpanContext().TraceID()
 			if traceId.IsValid() {
 				traceLabels := prometheus.Labels{"trace_id": traceId.String()}
@@ -182,20 +182,20 @@ func dataflowO11YMetric() dataflow.Middleware {
 
 func dataflowO11YLogger() dataflow.Middleware {
 	return func(next dataflow.HandleFunc) dataflow.HandleFunc {
-		return func(msg *dataflow.Message, dep any) error {
-			c := msg.RawInfra.(*fiber.Ctx)
+		return func(ingress *dataflow.Message, dep any) error {
+			c := ingress.RawInfra.(*fiber.Ctx)
 			ctx := c.UserContext()
 
 			logger := pkg.Logger().CtxGetLogger(ctx).With(
 				slog.Any("dataflow", slog.GroupValue(
-					slog.String("subject", msg.Subject),
+					slog.String("subject", ingress.Subject),
 				)),
 			)
 
 			c.SetUserContext(pkg.Logger().CtxWithLogger(ctx, logger))
-			msg.RawInfra = c
+			ingress.RawInfra = c
 
-			err := next(msg, dep)
+			err := next(ingress, dep)
 
 			errCode := strconv.Itoa(FiberMetadata.GetErrorCode(c))
 			if errCode != "0" {
