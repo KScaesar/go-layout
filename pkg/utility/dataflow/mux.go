@@ -24,18 +24,13 @@ func NewMux(routeDelimiter string) *Mux {
 //
 // Message represents a high-level abstraction data structure containing metadata (e.g. header) + body
 type Mux struct {
-	node              *trie
-	routeDelimiter    string
-	errorHandler      ErrorHandleFunc
-	enableMessagePool bool
+	node           *trie
+	routeDelimiter string
+	errorHandler   ErrorHandleFunc
 }
 
 // HandleMessage is also a HandleFunc, but with added routing capabilities.
 func (mux *Mux) HandleMessage(message *Message, dependency any) (err error) {
-	if mux.enableMessagePool {
-		defer PutMessage(message)
-	}
-
 	defer func() {
 		if mux.errorHandler != nil {
 			err = mux.errorHandler(message, dependency, err)
@@ -112,10 +107,9 @@ func (mux *Mux) HandlerByNumber(subject int, h HandleFunc, mw ...Middleware) *Mu
 func (mux *Mux) Group(groupName string) *Mux {
 	groupNode := mux.node.addRoute(groupName, 0, nil, []Middleware{})
 	return &Mux{
-		node:              groupNode,
-		routeDelimiter:    mux.routeDelimiter,
-		errorHandler:      mux.errorHandler,
-		enableMessagePool: mux.enableMessagePool,
+		node:           groupNode,
+		routeDelimiter: mux.routeDelimiter,
+		errorHandler:   mux.errorHandler,
 	}
 }
 
@@ -159,11 +153,6 @@ func (mux *Mux) NotFoundHandler(h HandleFunc) *Mux {
 
 func (mux *Mux) ErrorHandler(errHandler ErrorHandleFunc) *Mux {
 	mux.errorHandler = errHandler
-	return mux
-}
-
-func (mux *Mux) EnableMessagePool() *Mux {
-	mux.enableMessagePool = true
 	return mux
 }
 
