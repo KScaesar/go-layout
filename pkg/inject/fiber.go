@@ -33,7 +33,7 @@ func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 		DisableStartupMessage: true,
 	})
 
-	o11yMetric := wfiber.O11YMetric(pkg.Version().ServiceName)
+	o11yMetric := adapters.FiberO11YMetric
 	o11yLogger1, o11yLogger2 := wfiber.O11YLogger(conf.Http.Debug, conf.O11Y.EnableTrace, pkg.Logger())
 	transaction := wfiber.GormTX(db, nil, pkg.Logger())
 	router.Use(
@@ -44,7 +44,7 @@ func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 	)
 
 	fixFiberIssue3138 := func(handler fiber.Handler) []fiber.Handler {
-		return []fiber.Handler{o11yMetric, o11yLogger2, transaction, handler}
+		return []fiber.Handler{o11yMetric.Middleware, o11yLogger2, transaction, handler}
 	}
 
 	router.Get("/:id", fixFiberIssue3138(api.HelloFiber())...)

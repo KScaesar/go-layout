@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -15,7 +16,12 @@ import (
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/KScaesar/go-layout/pkg/utility/dataflow"
+	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
 )
+
+var FiberO11YMetric = wfiber.NewO11YMetric(pkg.Version().ServiceName)
+
+//
 
 var FiberMetadata = newFiberMetadataKey()
 
@@ -101,82 +107,102 @@ func ParseQueryByFiber(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error)
 	return true, nil
 }
 
+func ParseDataflowByFiber(ingress *dataflow.Message, req any, logger *slog.Logger) (bool, error) {
+	err := json.Unmarshal(ingress.Bytes, req)
+	if err != nil {
+		logger.Error(err.Error(), slog.Any("cause", json.Unmarshal))
+		c := ingress.RawInfra.(*fiber.Ctx)
+		return false, HandleErrorByFiber(c, pkg.ErrInvalidParam)
+	}
+	return true, nil
+}
+
 //
 
-func dataflowO11YMetric() dataflow.Middleware {
-	svcName := pkg.Version().ServiceName
+var dataflowO11YMetric = newDataflowO11YMetric(pkg.Version().ServiceName)
+
+func newDataflowO11YMetric(svcName string) *_dataflowO11YMetric {
+	return &_dataflowO11YMetric{
+		ResponseSecond: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: svcName,
+			Subsystem: "dataflow",
+			Name:      "request_duration_seconds",
+			Help:      "Histogram of response time for RPC in seconds",
+			Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
+		}, []string{"err_code", "subject"}),
+
+		RequestsTotal: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: svcName,
+			Subsystem: "dataflow",
+			Name:      "requests_total",
+			Help:      "Total number of RPC requests",
+		}, []string{"subject"}),
+		ErrorsTotal: promauto.NewCounterVec(prometheus.CounterOpts{
+			Namespace: svcName,
+			Subsystem: "dataflow",
+			Name:      "requests_total_errors",
+			Help:      "Total number of RPC errors",
+		}, []string{"err_code", "subject"}),
+
+		RequestsInflight: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: svcName,
+			Subsystem: "dataflow",
+			Name:      "requests_in_flight",
+			Help:      "The number of inflight RPC requests being handled at the same time",
+		}, []string{"subject"}),
+	}
+}
+
+type _dataflowO11YMetric struct {
+	// metric1
+	ResponseSecond *prometheus.HistogramVec
 
 	// metric2-a
-	RPCRequestsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: svcName,
-		Subsystem: "dataflow",
-		Name:      "requests_total",
-		Help:      "Total number of RPC requests",
-	}, []string{"subject"})
-
+	RequestsTotal *prometheus.CounterVec
 	// metric2-b
-	RPCErrorsTotal := promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: svcName,
-		Subsystem: "dataflow",
-		Name:      "requests_total_errors",
-		Help:      "Total number of RPC errors",
-	}, []string{"err_code", "subject"})
+	ErrorsTotal *prometheus.CounterVec
 
 	// metric3
-	RPCRequestsInflight := promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: svcName,
-		Subsystem: "dataflow",
-		Name:      "requests_in_flight",
-		Help:      "The number of inflight RPC requests being handled at the same time",
-	}, []string{"subject"})
+	RequestsInflight *prometheus.GaugeVec
+}
 
-	// metric1
-	RPCResponseSecond := promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: svcName,
-		Subsystem: "dataflow",
-		Name:      "request_duration_seconds",
-		Help:      "Histogram of response time for RPC in seconds",
-		Buckets:   []float64{0.05, 0.2, 0.4, 0.6, 0.8, 1, 5, 10, 30}, // 50 ms ~ 30 s
-	}, []string{"err_code", "subject"})
+func (m *_dataflowO11YMetric) Middleware(next dataflow.HandleFunc) dataflow.HandleFunc {
+	return func(ingress *dataflow.Message, dep any) error {
+		c := ingress.RawInfra.(*fiber.Ctx)
+		subject := ingress.Subject
 
-	return func(next dataflow.HandleFunc) dataflow.HandleFunc {
-		return func(ingress *dataflow.Message, dep any) error {
-			c := ingress.RawInfra.(*fiber.Ctx)
-			subject := ingress.Subject
+		// metric1
+		start := time.Now()
 
-			// metric1
-			start := time.Now()
+		// metric2-a
+		m.RequestsTotal.WithLabelValues(subject).Inc()
 
-			// metric2-a
-			RPCRequestsTotal.WithLabelValues(subject).Inc()
+		// metric3
+		m.RequestsInflight.WithLabelValues(subject).Add(1)
 
-			// metric3
-			RPCRequestsInflight.WithLabelValues(subject).Add(1)
+		err := next(ingress, dep)
 
-			err := next(ingress, dep)
+		// metric3
+		m.RequestsInflight.WithLabelValues(subject).Add(-1)
 
-			// metric3
-			RPCRequestsInflight.WithLabelValues(subject).Add(-1)
-
-			// metric2-b
-			errCode := strconv.Itoa(FiberMetadata.GetErrorCode(c))
-			if errCode != "0" {
-				RPCErrorsTotal.WithLabelValues(errCode, subject).Inc()
-			}
-
-			// metric1
-			duration := time.Since(start).Seconds()
-			span := trace.SpanFromContext(ingress.Ctx)
-			traceId := span.SpanContext().TraceID()
-			if traceId.IsValid() {
-				traceLabels := prometheus.Labels{"trace_id": traceId.String()}
-				RPCResponseSecond.WithLabelValues(errCode, subject).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
-			} else {
-				RPCResponseSecond.WithLabelValues(errCode, subject).Observe(duration)
-			}
-
-			return err
+		// metric2-b
+		errCode := strconv.Itoa(FiberMetadata.GetErrorCode(c))
+		if errCode != "0" {
+			m.ErrorsTotal.WithLabelValues(errCode, subject).Inc()
 		}
+
+		// metric1
+		duration := time.Since(start).Seconds()
+		span := trace.SpanFromContext(ingress.Ctx)
+		traceId := span.SpanContext().TraceID()
+		if traceId.IsValid() {
+			traceLabels := prometheus.Labels{"trace_id": traceId.String()}
+			m.ResponseSecond.WithLabelValues(errCode, subject).(prometheus.ExemplarObserver).ObserveWithExemplar(duration, traceLabels)
+		} else {
+			m.ResponseSecond.WithLabelValues(errCode, subject).Observe(duration)
+		}
+
+		return err
 	}
 }
 
