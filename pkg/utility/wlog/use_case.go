@@ -45,11 +45,9 @@ func NewStderrLoggerWhenDebug() *Logger {
 	return NewStderrLogger(conf)
 }
 
-func NewStderrLoggerWhenTesting() *Logger {
+func NewDiscardLogger() *Logger {
 	conf := &Config{}
-	warn := 4
-	conf.SetAddSource(true).
-		SetLevelVar(warn).
-		SetNoColor(false)
-	return NewStderrLogger(conf)
+	handler := NewHandler(io.Discard, conf)
+	logger := NewLogger(conf.LevelVar, handler)
+	return logger
 }

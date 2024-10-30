@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 
 	// wlogger := wlog.NewStderrLoggerWhenNormal(false)
 	// wlogger := wlog.NewStderrLoggerWhenDebug()
-	wlogger := wlog.NewStderrLoggerWhenTesting()
+	wlogger := wlog.NewDiscardLogger()
 	pkg.Logger().PointToNew(wlogger)
 
 	code := m.Run()
