@@ -210,7 +210,7 @@ func (node *trie) handleMessage(subject string, cursor int, message *Message, de
 	}
 
 	// for static route
-	if current.handler != nil {
+	if current.handler != nil && cursor == len(subject) {
 		return current.handler(message, dep)
 	}
 	if wildcardParent == nil {
