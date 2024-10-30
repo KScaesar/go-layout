@@ -93,7 +93,7 @@ func fixFiberError(err *fiber.Error) (error, bool) {
 	case fiber.StatusNotFound:
 		return fmt.Errorf("%w: %w", pkg.ErrNotExists, err), true
 	case fiber.StatusMethodNotAllowed:
-		return fmt.Errorf("http method: %w: %w", pkg.ErrInvalidParam, err), true
+		return pkg.ErrInvalidHttpMethod, true
 	}
 	return err, false
 }

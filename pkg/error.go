@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"net/http"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 var (
@@ -17,6 +19,10 @@ var (
 			AddErrorCode(4002).
 			AddHttpStatus(http.StatusNotFound).
 			NewError("resource does not exist")
+	ErrInvalidHttpMethod = ErrorRegistry().
+				AddErrorCode(4003).
+				AddHttpStatus(http.StatusMethodNotAllowed).
+				WrapError("invalid http method", fiber.ErrMethodNotAllowed)
 
 	ErrSystem = ErrorRegistry().
 			AddErrorCode(5000).
