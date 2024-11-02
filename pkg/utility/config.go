@@ -17,8 +17,8 @@ var ErrDecodeConf = errors.New("decode config")
 //
 // 1. The specified FilePath parameter
 // 2. The current directory
-// 3. The path defined by the environment variable CONF_PATH
-// 4. The user's home directory
+// 3. The user's home directory
+// 4. The path defined by the environment variable CONF_PATH
 //
 // Parameters:
 // - decode: A function used to decode the content of the configuration file into an instance of type T.
@@ -34,8 +34,8 @@ func LoadLocalConfigFromMultiSource[T any](
 	const (
 		byNormal int = iota + 1
 		byCurrentDir
-		byEnvironmentVariable
 		byHomeDir
+		byEnvironmentVariable
 		stop
 	)
 
@@ -57,16 +57,19 @@ func LoadLocalConfigFromMultiSource[T any](
 			}
 			return filepath.Join(currentDir, fileName), nil
 		},
-		byEnvironmentVariable: func() (string, error) {
-			byEnvPath, _ := os.LookupEnv(DefaultEnvName)
-			return byEnvPath, nil
-		},
 		byHomeDir: func() (string, error) {
 			osUser, err := user.Current()
 			if err != nil {
 				return "", err
 			}
 			return filepath.Join(osUser.HomeDir, fileName), nil
+		},
+		byEnvironmentVariable: func() (string, error) {
+			byEnvPath, ok := os.LookupEnv(DefaultEnvName)
+			if !ok {
+				return "", errors.New("ENV ${CONF_PATH} not set")
+			}
+			return byEnvPath, nil
 		},
 	}
 
