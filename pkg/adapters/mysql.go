@@ -22,22 +22,28 @@ func NewMySqlGorm(conf *pkg.MySql) (*gorm.DB, error) {
 		return nil, fmt.Errorf("connect mysql: %w", err)
 	}
 
-	stdDB, err := db.DB()
+	pingDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("get stdDB: %w", err)
+		return nil, fmt.Errorf("get pingDB: %w", err)
 	}
 
-	err = stdDB.Ping()
+	err = pingDB.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("ping mysql: %w", err)
 	}
 
-	id := fmt.Sprintf("mysql(%p)", stdDB)
-	pkg.Shutdown().AddPriorityShutdownAction(2, id, stdDB.Close)
-
 	if conf.Debug {
 		db = db.Debug()
 	}
+
+	id := fmt.Sprintf("mysql(%p)", db)
+	pkg.Shutdown().AddPriorityShutdownAction(2, id, func() error {
+		stdDB, err := db.DB()
+		if err != nil {
+			return fmt.Errorf("get stdDB: %w", err)
+		}
+		return stdDB.Close()
+	})
 
 	return db, nil
 }
