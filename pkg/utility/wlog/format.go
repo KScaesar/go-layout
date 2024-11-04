@@ -16,6 +16,7 @@ var DefaultFormats = []FormatFunc{
 	FormatKindTime(),
 	FormatKindDuration(),
 	FormatTypeFunc(),
+	FormatTypePointer(),
 }
 
 type FormatFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
@@ -77,8 +78,28 @@ func FormatTypeFunc() FormatFunc {
 			if rv.Kind() != reflect.Func {
 				return a, false
 			}
+
 			fnName := runtime.FuncForPC(rv.Pointer()).Name()
 			a.Value = slog.StringValue(filepath.Base(fnName))
+			return a, true
+		}
+		return a, false
+	}
+}
+
+func FormatTypePointer() FormatFunc {
+	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
+		if a.Value.Kind() == slog.KindAny {
+			rv := reflect.ValueOf(a.Value.Any())
+			if rv.Kind() != reflect.Pointer {
+				return a, false
+			}
+
+			if rv.IsNil() {
+				a.Value = slog.StringValue("")
+			} else {
+				a.Value = slog.AnyValue(rv.Elem().Interface())
+			}
 			return a, true
 		}
 		return a, false
