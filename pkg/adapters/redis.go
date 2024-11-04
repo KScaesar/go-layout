@@ -26,6 +26,7 @@ func NewRedis(conf *pkg.Redis) (*redis.Client, error) {
 		return nil, fmt.Errorf("ping redis: %w", err)
 	}
 
-	pkg.Shutdown().AddPriorityShutdownAction(2, "redis", client.Close)
+	id := fmt.Sprintf("redis(%p)", client)
+	pkg.Shutdown().AddPriorityShutdownAction(2, id, client.Close)
 	return client, nil
 }

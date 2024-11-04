@@ -32,10 +32,12 @@ func NewMySqlGorm(conf *pkg.MySql) (*gorm.DB, error) {
 		return nil, fmt.Errorf("ping mysql: %w", err)
 	}
 
+	id := fmt.Sprintf("mysql(%p)", stdDB)
+	pkg.Shutdown().AddPriorityShutdownAction(2, id, stdDB.Close)
+
 	if conf.Debug {
 		db = db.Debug()
 	}
 
-	pkg.Shutdown().AddPriorityShutdownAction(2, "mysql", stdDB.Close)
 	return db, nil
 }

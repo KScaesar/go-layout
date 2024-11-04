@@ -1,6 +1,7 @@
 package inject
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/gofiber/fiber/v2"
@@ -61,7 +62,8 @@ func ServeFiber(port string, debug bool, router *fiber.App) {
 		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		return nil
 	})
-	pkg.Shutdown().AddPriorityShutdownAction(0, "api", router.Server().Shutdown)
+	id := fmt.Sprintf("fiber(%p)", router)
+	pkg.Shutdown().AddPriorityShutdownAction(0, id, router.Server().Shutdown)
 
 	go func() {
 		err := router.Listen("0.0.0.0:" + port)

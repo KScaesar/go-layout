@@ -2,6 +2,7 @@ package inject
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -50,7 +51,8 @@ func ServeGin(port string, handler http.Handler) {
 		Addr:    "0.0.0.0:" + port,
 		Handler: handler,
 	}
-	pkg.Shutdown().AddPriorityShutdownAction(0, "api", func() error {
+	id := fmt.Sprintf("gin(%p)", server)
+	pkg.Shutdown().AddPriorityShutdownAction(0, id, func() error {
 		return server.Shutdown(context.Background())
 	})
 
