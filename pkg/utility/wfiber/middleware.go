@@ -30,7 +30,7 @@ func O11YTrace(enableTrace bool) fiber.Handler {
 			return c.Next()
 		}
 
-		ctx, span := otel.Tracer("").Start(c.Context(), "", trace.WithSpanKind(trace.SpanKindServer))
+		ctx, span := otel.Tracer("").Start(c.UserContext(), "", trace.WithSpanKind(trace.SpanKindServer))
 		c.SetUserContext(ctx)
 		defer span.End()
 		return c.Next()
