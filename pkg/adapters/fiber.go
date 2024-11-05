@@ -68,8 +68,10 @@ func HandleErrorByFiber(c *fiber.Ctx, err error) error {
 	FiberMetadata.SetErrorCode(c, myErr.ErrorCode())
 
 	DefaultErrorResponse := fiber.Map{
-		"code": myErr.ErrorCode(),
-		"msg":  err.Error(),
+		"error": map[string]any{
+			"code":    myErr.ErrorCode(),
+			"message": err.Error(),
+		},
 	}
 	return c.Status(myErr.HttpStatus()).JSON(DefaultErrorResponse)
 }
