@@ -51,12 +51,20 @@ func (b *BiMap[K, V]) Set(key K, val V) (*BiMap[K, V], error) {
 
 func (b *BiMap[K, V]) GetByKey(key K) (V, bool) {
 	val, ok := b.keyMap[unique.Make(key)]
-	return val.Value(), ok
+	if !ok {
+		var empty V
+		return empty, false
+	}
+	return val.Value(), true
 }
 
 func (b *BiMap[K, V]) GetByValue(val V) (K, bool) {
 	key, ok := b.valMap[unique.Make(val)]
-	return key.Value(), ok
+	if !ok {
+		var empty K
+		return empty, false
+	}
+	return key.Value(), true
 }
 
 func (b *BiMap[K, V]) KeyMapping() map[K]V {
