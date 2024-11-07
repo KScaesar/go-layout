@@ -9,6 +9,7 @@
 *configs/**
 !configs/example*
 !configs/*.go
+.env
 
 .go-version
 
