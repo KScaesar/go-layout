@@ -15,7 +15,7 @@ type ReadProxy[ViewModel any, Read func(key string) (ViewModel, error), Write fu
 	ReadReplica  Read
 	ReadPrimary  Read
 	WriteReplica Write
-	SingleFlight *Singleflight
+	Guard        *Singleflight
 }
 
 // SafeReadPrimaryNode 併發時, 只會保護 Primary Node, 不會保護 Replica Node
@@ -29,11 +29,11 @@ func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryNode(key string) (
 
 // SafeReadPrimaryAndReplicaNode 併發時, 會保護 Primary Node and Replica Node
 func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryAndReplicaNode(key string) (val ViewModel, err error) {
-	value, err, _ := proxy.SingleFlight.Do(key, func() (any, error) {
+	value, err, _ := proxy.Guard.Do(key, func() (any, error) {
 		return proxy.Read(key)
 	})
-	proxy.SingleFlight.Expire(key, time.Second)
-	// proxy.SingleFlight.Forget(key)
+	proxy.Guard.Expire(key, time.Second)
+	// proxy.Guard.Forget(key)
 	return value.(ViewModel), err
 }
 

@@ -48,7 +48,7 @@ func (repo *UserRepository) QueryUserById(ctx context.Context, userId string) (a
 		WriteReplica: func(key string, resp *app.UserResponse) error {
 			return repo.cache.SetUser(ctx, key, resp)
 		},
-		SingleFlight: &repo.singleFlight,
+		Guard: &repo.singleFlight,
 	}
 	return proxy.SafeReadPrimaryAndReplicaNode("userId:" + userId)
 }
@@ -64,7 +64,7 @@ func (repo *UserRepository) QueryMultiUserByFilter(ctx context.Context, filter *
 		WriteReplica: func(key string, resp *app.MultiUserResponse) error {
 			return repo.cache.SetMultiUser(ctx, key, resp)
 		},
-		SingleFlight: &repo.singleFlight,
+		Guard: &repo.singleFlight,
 	}
 	return proxy.SafeReadPrimaryNode("xxxKey")
 }
