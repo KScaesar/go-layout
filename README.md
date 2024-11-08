@@ -1,5 +1,43 @@
 # README
 
+## quick start
+
+在進行開發或整合測試之前，請先設定以下環境變數：  
+[ref1](configs/example.env)
+
+- `CONF_PATH`：config 的完整路徑（如 `configs/example.yml`）。
+- `WORK_DIR`：工作目錄的路徑。
+- `CGO_ENABLED`：設定為 `1` 以啟用 CGO 支援，僅 macOS 需要開啟。
+
+
+Run Application:  
+[ref1](pkg/config.go)
+
+```bash
+export CONF_PATH=$(pwd)/configs/acs3.yml
+
+go run ./cmd/acs3/main.go
+or
+go run ./cmd/acs3/main.go --conf=$(pwd)/configs/acs3.yml
+```
+
+Run Integration Test:  
+[ref1](pkg/testdata/docker_intg.go)  
+[ref2](https://stackoverflow.com/questions/58649876/how-do-i-set-active-go-build-tags-for-static-analysis-in-vscode)
+
+```bash
+export WORK_DIR=$(pwd)
+export CGO_ENABLED=1
+
+go test -tags=intg -count=1 -v ./pkg/...
+```
+
+Run Unit Test:
+
+```bash
+go test -count=1 ./pkg/...
+```
+
 ## project layout
 
 ![project_layout](./docs/project_layout.png)
