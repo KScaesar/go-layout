@@ -44,6 +44,7 @@ func newMessage() *Message {
 	}
 }
 
+// Message represents a high-level abstraction data structure containing metadata (e.g. header) + body
 type Message struct {
 	Subject string
 

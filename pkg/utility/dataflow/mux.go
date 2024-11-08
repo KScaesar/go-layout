@@ -21,8 +21,6 @@ func NewMux(routeDelimiter string) *Mux {
 }
 
 // Mux refers to a router or multiplexer, which can be used to handle different message.
-//
-// Message represents a high-level abstraction data structure containing metadata (e.g. header) + body
 type Mux struct {
 	node           *trie
 	routeDelimiter string
