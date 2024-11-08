@@ -8,21 +8,31 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/utility/wlog"
 )
 
-func TestMain(m *testing.M) {
-	defer pkg.Shutdown().Notify(nil)
+var testConfig pkg.Config
 
+func TestMain(m *testing.M) {
 	// wlogger := wlog.NewStderrLoggerWhenNormal(false)
 	// wlogger := wlog.NewStderrLoggerWhenDebug()
 	wlogger := wlog.NewDiscardLogger()
 	pkg.Logger().PointToNew(wlogger)
 
-	code := m.Run()
-	os.Exit(code)
+	// DownDocker := testdata.UpDocker(true, &testConfig)
+
+	goleak.VerifyTestMain(m,
+		goleak.IgnoreCurrent(),
+		goleak.Cleanup(func(code int) {
+			pkg.Shutdown().Notify(nil)
+			<-pkg.Shutdown().WaitChannel()
+			// DownDocker()
+			os.Exit(code)
+		}),
+	)
 }
 
 func testHttpResponseJsonBody(t *testing.T, resp *http.Response) string {
