@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -35,15 +34,9 @@ func TestMain(m *testing.M) {
 	)
 }
 
-func testHttpResponseJsonBody(t *testing.T, resp *http.Response) string {
+func testHttpResponseStringBody(t *testing.T, resp *http.Response) string {
 	defer resp.Body.Close()
 	bBody, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
-	return string(bBody)
-}
-
-func testExpectedHttpResponse(t *testing.T, appResponse any) string {
-	bBody, err := json.Marshal(appResponse)
 	assert.NoError(t, err)
 	return string(bBody)
 }
