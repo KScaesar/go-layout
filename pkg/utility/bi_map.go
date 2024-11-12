@@ -49,7 +49,7 @@ func (b *BiMap[K, V]) Set(key K, val V) (*BiMap[K, V], error) {
 	return b, nil
 }
 
-func (b *BiMap[K, V]) GetByKey(key K) (V, bool) {
+func (b *BiMap[K, V]) KeyToVal(key K) (V, bool) {
 	val, ok := b.keyMap[unique.Make(key)]
 	if !ok {
 		var empty V
@@ -58,7 +58,11 @@ func (b *BiMap[K, V]) GetByKey(key K) (V, bool) {
 	return val.Value(), true
 }
 
-func (b *BiMap[K, V]) GetByValue(val V) (K, bool) {
+func (b *BiMap[K, V]) KeyToValMapping() map[K]V {
+	return b.keys
+}
+
+func (b *BiMap[K, V]) ValToKey(val V) (K, bool) {
 	key, ok := b.valMap[unique.Make(val)]
 	if !ok {
 		var empty K
@@ -67,10 +71,6 @@ func (b *BiMap[K, V]) GetByValue(val V) (K, bool) {
 	return key.Value(), true
 }
 
-func (b *BiMap[K, V]) KeyMapping() map[K]V {
-	return b.keys
-}
-
-func (b *BiMap[K, V]) ValueMapping() map[V]K {
+func (b *BiMap[K, V]) ValToKeyMapping() map[V]K {
 	return b.values
 }
