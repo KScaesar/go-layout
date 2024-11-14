@@ -48,12 +48,12 @@ func newMessage() *Message {
 type Message struct {
 	Subject string
 
-	Bytes []byte
-	Body  any
+	Bytes []byte // ingress byte payload or egress byte payload
+	Body  any    // egress golang object
 
 	identifier string
 
-	Mutex sync.Mutex
+	Mutex sync.Mutex // for egress broadcast data process
 
 	// RouteParam are used to capture values from subject.
 	// These parameters represent resources or identifiers.
@@ -69,9 +69,15 @@ type Message struct {
 
 	Metadata maputil.Data
 
+	// raw message from 3rd pkg
+	//
+	// Example:
+	//
+	// fiber.Ctx or amqp.Delivery or kafka.Message
 	RawInfra any
+
 	reply    Reply
-	pingpong chan struct{}
+	pingpong chan struct{} // websocket or tcp socket for check connection health
 
 	Ctx context.Context
 }
