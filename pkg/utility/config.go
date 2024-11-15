@@ -6,7 +6,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"os/user"
 	"path/filepath"
 )
 
@@ -58,11 +57,11 @@ func LoadLocalConfigFromMultiSource[T any](
 			return filepath.Join(currentDir, fileName), nil
 		},
 		byHomeDir: func() (string, error) {
-			osUser, err := user.Current()
+			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				return "", err
 			}
-			return filepath.Join(osUser.HomeDir, fileName), nil
+			return filepath.Join(homeDir, fileName), nil
 		},
 		byEnvironmentVariable: func() (string, error) {
 			byEnvPath, ok := os.LookupEnv(DefaultEnvName)
