@@ -13,10 +13,13 @@ import (
 
 var DefaultFormats = []FormatFunc{
 	FormatKeySource(),
-	FormatKindTime(),
-	FormatKindDuration(),
-	FormatTypeFunc(),
-	FormatTypePointer(),
+	FormatKindTime,
+	FormatKindDuration,
+	FormatTypeFunc,
+	FormatTypeStdError,
+	FormatTypePointer(
+		FormatTypeStdError,
+	),
 }
 
 type FormatFunc func(groups []string, a slog.Attr) (slog.Attr, bool)
@@ -51,43 +54,40 @@ func FormatKeySource() FormatFunc {
 	}
 }
 
-func FormatKindTime() FormatFunc {
-	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
-		if a.Value.Kind() == slog.KindTime {
-			a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
-			return a, true
-		}
-		return a, false
+func FormatKindTime(groups []string, a slog.Attr) (slog.Attr, bool) {
+	if a.Value.Kind() == slog.KindTime {
+		a.Value = slog.StringValue(a.Value.Time().Format(time.RFC3339))
+		return a, true
 	}
+	return a, false
 }
 
-func FormatKindDuration() FormatFunc {
-	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
-		if a.Value.Kind() == slog.KindDuration {
-			a.Value = slog.StringValue(a.Value.Duration().String())
-			return a, true
-		}
-		return a, false
+func FormatKindDuration(groups []string, a slog.Attr) (slog.Attr, bool) {
+	if a.Value.Kind() == slog.KindDuration {
+		a.Value = slog.StringValue(a.Value.Duration().String())
+		return a, true
 	}
+	return a, false
 }
 
-func FormatTypeFunc() FormatFunc {
-	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
-		if a.Value.Kind() == slog.KindAny {
-			rv := reflect.ValueOf(a.Value.Any())
-			if rv.Kind() != reflect.Func {
-				return a, false
-			}
-
-			fnName := runtime.FuncForPC(rv.Pointer()).Name()
-			a.Value = slog.StringValue(filepath.Base(fnName))
-			return a, true
+func FormatTypeFunc(groups []string, a slog.Attr) (slog.Attr, bool) {
+	if a.Value.Kind() == slog.KindAny {
+		rv := reflect.ValueOf(a.Value.Any())
+		if rv.Kind() != reflect.Func {
+			return a, false
 		}
-		return a, false
+
+		fnName := runtime.FuncForPC(rv.Pointer()).Name()
+		a.Value = slog.StringValue(filepath.Base(fnName))
+		return a, true
 	}
+	return a, false
 }
 
-func FormatTypePointer() FormatFunc {
+// FormatTypePointer
+// golang interface 可能由 ptr type or value type implement
+// 藉由參數 formatInterfaceTypes, 處理 ptr golang interface 的情境
+func FormatTypePointer(formatInterfaceTypes ...FormatFunc) FormatFunc {
 	return func(groups []string, a slog.Attr) (slog.Attr, bool) {
 		if a.Value.Kind() == slog.KindAny {
 			rv := reflect.ValueOf(a.Value.Any())
@@ -95,13 +95,33 @@ func FormatTypePointer() FormatFunc {
 				return a, false
 			}
 
+			for _, format := range formatInterfaceTypes {
+				attr, ok := format(groups, a)
+				if ok {
+					return attr, true
+				}
+			}
+
 			if rv.IsNil() {
 				a.Value = slog.StringValue("")
 			} else {
 				a.Value = slog.AnyValue(rv.Elem().Interface())
 			}
+
 			return a, true
 		}
 		return a, false
 	}
+}
+
+func FormatTypeStdError(groups []string, a slog.Attr) (slog.Attr, bool) {
+	if a.Value.Kind() == slog.KindAny {
+		err, ok := a.Value.Any().(error)
+		if !ok {
+			return a, false
+		}
+		a.Value = slog.StringValue(err.Error())
+		return a, true
+	}
+	return a, false
 }
