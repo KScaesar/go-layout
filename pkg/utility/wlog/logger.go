@@ -176,6 +176,6 @@ func (l *Logger) PointToNew(new *Logger) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	*l.lvl = *(new.lvl)
+	l.lvl = new.lvl // 維持 slog.Handler 對 LevelVar 的引用
 	*l.Logger = *(new.Logger)
 }

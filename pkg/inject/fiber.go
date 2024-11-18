@@ -11,7 +11,6 @@ import (
 
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
-	"github.com/KScaesar/go-layout/pkg/adapters/api"
 	"github.com/KScaesar/go-layout/pkg/utility/wfiber"
 )
 
@@ -48,7 +47,6 @@ func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 		return []fiber.Handler{o11yMetric.Middleware, o11yLogger2, transaction, handler}
 	}
 
-	router.Get("/:id", fixFiberIssue3138(api.HelloFiber())...)
 	router.Get("/logger/level", fixFiberIssue3138(wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))...)
 
 	return router
