@@ -10,7 +10,7 @@ import (
 
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
-	"github.com/KScaesar/go-layout/pkg/adapters/database"
+	"github.com/KScaesar/go-layout/pkg/adapters/datastore"
 	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
@@ -45,10 +45,10 @@ func NewService(conf *pkg.Config, infra *Infra) *Service {
 		utility.NewGormEasyTransaction,
 		utility.NewGormTransaction,
 
-		database.NewUserMySQL,
-		database.NewUserRedis,
-		database.NewUserRepository,
-		wire.Bind(new(app.UserRepository), new(*database.UserRepository)),
+		datastore.NewUserMySQL,
+		datastore.NewUserRedis,
+		datastore.NewUserRepository,
+		wire.Bind(new(app.UserRepository), new(*datastore.UserRepository)),
 
 		app.NewUserUseCase,
 		wire.Bind(new(app.UserService), new(*app.UserUseCase)),
@@ -63,6 +63,7 @@ type Service struct {
 	app.UserService
 }
 
+//go:generate wire gen
+
 // https://github.com/google/wire/tree/main/docs
 // https://github.com/google/wire/tree/main/_tutorial
-//go:generate wire gen

@@ -9,7 +9,7 @@ package inject
 import (
 	"github.com/KScaesar/go-layout/pkg"
 	"github.com/KScaesar/go-layout/pkg/adapters"
-	"github.com/KScaesar/go-layout/pkg/adapters/database"
+	"github.com/KScaesar/go-layout/pkg/adapters/datastore"
 	"github.com/KScaesar/go-layout/pkg/app"
 	"github.com/KScaesar/go-layout/pkg/utility"
 	"github.com/redis/go-redis/v9"
@@ -40,10 +40,10 @@ func NewService(conf *pkg.Config, infra *Infra) *Service {
 	db := infra.MySql
 	transaction := utility.NewGormTransaction(db)
 	easyTransaction := utility.NewGormEasyTransaction(db)
-	userMySQL := database.NewUserMySQL(db)
+	userMySQL := datastore.NewUserMySQL(db)
 	client := infra.Redis
-	userRedis := database.NewUserRedis(client)
-	userRepository := database.NewUserRepository(userMySQL, userRedis)
+	userRedis := datastore.NewUserRedis(client)
+	userRepository := datastore.NewUserRepository(userMySQL, userRedis)
 	userUseCase := app.NewUserUseCase(userRepository)
 	service := &Service{
 		Transaction:     transaction,
