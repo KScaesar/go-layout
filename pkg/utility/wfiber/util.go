@@ -23,7 +23,7 @@ func ShowRoutes(router *fiber.App) {
 
 		handler := route.Handlers[len(route.Handlers)-1]
 		rv := reflect.ValueOf(handler)
-		out = append(out, fmt.Sprintf(" └─ %8s", runtime.FuncForPC(rv.Pointer()).Name()))
+		out = append(out, fmt.Sprintf("\u001B[90m  └─ %8s\u001B[0m", runtime.FuncForPC(rv.Pointer()).Name()))
 	}
 	out = append(out, "")
 
