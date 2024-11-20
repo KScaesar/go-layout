@@ -3,6 +3,7 @@ module github.com/KScaesar/go-layout
 go 1.23.2
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/felixge/fgprof v0.9.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofiber/fiber/v2 v2.52.5
