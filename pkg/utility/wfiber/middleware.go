@@ -83,7 +83,10 @@ type O11YMetric struct {
 }
 
 func (m *O11YMetric) Middleware(c *fiber.Ctx) error {
-	method := c.Method()
+	// 底層使用了 unsafe, 如果不進行複製, metric 採樣會出現 GETT or POS 這樣的數值
+	_method := []byte(c.Method())
+	method := string(_method)
+
 	route := c.Route().Path
 
 	// metric1

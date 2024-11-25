@@ -11,7 +11,7 @@
 import http from 'k6/http';
 import {check, sleep} from 'k6';
 
-// const BASE_URL = "http://127.0.0.1:8093";
+const BASE_URL = "http://127.0.0.1:8800";
 
 function generateStages(start, end, diff) {
   const stages = [];
@@ -26,7 +26,7 @@ function generateStages(start, end, diff) {
 
 const constantVU = {
   executor: 'constant-vus',
-  vus: 3000,
+  vus: 10,
   duration: '10s',
 };
 
@@ -78,44 +78,12 @@ export let options = {
   },
 };
 
-const projectNumbers = [
-  "LTWEB02", "LTWEB00", "LTWEB02", "LTWEB00", "LTAGP00", "LTIOS03", "LTAGP00", "LTIOS03", "LTWEB00",
-];
-
-const contentTypes = [
-  'comic', 'blessedlife', 'kids', 'movie', 'show', 'ent', 'drama',
-];
-
 const endpoints = [
-  {method: 'GET', url: '/ads/v1/welcome_page?project_num=LTIOS03'},
+  {method: 'GET', url: '/logger/level?level=debug'},
   {
     method: 'POST',
-    url: '/ads/v1/rpc',
-    body: JSON.stringify({jsonrpc: "2.0", method: "ACS.GetWelcomePage", params: {project_num: "LTIOS03"}})
-  },
-  {method: 'GET', url: '/ads/v1/welcome_ad?project_num=LTAGP00'},
-  {
-    method: 'POST',
-    url: '/ads/v1/rpc',
-    body: JSON.stringify({jsonrpc: "2.0", method: "ACS.GetWelcomeAd", params: {project_num: "LTAGP00"}})
-  },
-  {method: 'GET', url: '/ads/v1/super_leaderboard?project_num=LTWEB00'},
-  {
-    method: 'POST',
-    url: '/ads/v1/rpc',
-    body: JSON.stringify({jsonrpc: "2.0", method: "ACS.GetSuperLeaderboard", params: {project_num: "LTWEB00"}})
-  },
-  {method: 'GET', url: '/ads/v1/mobile_leaderboard?project_num=LTWEB00'},
-  {
-    method: 'POST',
-    url: '/ads/v1/rpc',
-    body: JSON.stringify({jsonrpc: "2.0", method: "ACS.GetMobileLeaderboard", params: {project_num: "LTWEB00"}})
-  },
-  {method: 'GET', url: '/ads/v1/promo_banner?project_num=LTWEB02&content_type=drama'},
-  {
-    method: 'POST',
-    url: '/ads/v1/rpc',
-    body: JSON.stringify({jsonrpc: "2.0", method: "ACS.GetPromoBanner", params: {project_num: "LTWEB02", content_type: "drama"}})
+    url: '/logger/level',
+    body: JSON.stringify({level: "debug"})
   },
 ];
 
@@ -125,21 +93,12 @@ function getRandomIndex(length) {
 
 function getRandomEndpoint() {
   const endpoint = endpoints[getRandomIndex(endpoints.length)];
-  const projectNum = projectNumbers[getRandomIndex(projectNumbers.length)];
-  const contentType = contentTypes[getRandomIndex(contentTypes.length)];
-
   let url = BASE_URL + endpoint.url; // Add base URL to the endpoint
-  url = url.replace(/project_num=[A-Z0-9]+/, `project_num=${projectNum}`);
-  url = url.replace(/content_type=[a-z]+/, `content_type=${contentType}`);
 
   return {
     method: endpoint.method,
     url: url,
-    body: endpoint.body
-      ? endpoint.body
-        .replace(/project_num=[A-Z0-9]+/, `project_num=${projectNum}`)
-        .replace(/content_type=[a-z]+/, `content_type=${contentType}`)
-      : undefined,
+    body: undefined,
   };
 }
 
