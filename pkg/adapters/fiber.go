@@ -50,6 +50,20 @@ func (key *fiberMetadataKey) SetErrorCode(c *fiber.Ctx, errCode int) {
 
 //
 
+func NewErrorResponse(code int, message string) *ErrorResponse {
+	return &ErrorResponse{
+		Code:    code,
+		Message: message,
+	}
+}
+
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+//
+
 func HandleErrorByFiber(c *fiber.Ctx, err error) error {
 	myErr, ok := utility.UnwrapCustomError(err)
 	if !ok {
@@ -67,13 +81,9 @@ func HandleErrorByFiber(c *fiber.Ctx, err error) error {
 
 	FiberMetadata.SetErrorCode(c, myErr.ErrorCode())
 
-	DefaultErrorResponse := fiber.Map{
-		"error": map[string]any{
-			"code":    myErr.ErrorCode(),
-			"message": err.Error(),
-		},
-	}
-	return c.Status(myErr.HttpStatus()).JSON(DefaultErrorResponse)
+	errorResponse := NewErrorResponse(myErr.ErrorCode(), err.Error())
+	body := fiber.Map{"error": errorResponse}
+	return c.Status(myErr.HttpStatus()).JSON(body)
 }
 
 func fixUnknownError(err error) (Err error, isFixed bool) {
