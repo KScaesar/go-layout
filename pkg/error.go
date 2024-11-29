@@ -8,30 +8,30 @@ import (
 
 var (
 	ErrInvalidParam = ErrorRegistry().
-			AddErrorCode(4000).
-			AddHttpStatus(http.StatusBadRequest).
-			NewError("invalid parameter")
+		AddErrorCode(4000).
+		AddHttpStatus(http.StatusBadRequest).
+		NewError("invalid parameter")
 	ErrExists = ErrorRegistry().
-			AddErrorCode(4001).
-			AddHttpStatus(http.StatusConflict).
-			NewError("resource already existed")
+		AddErrorCode(4001).
+		AddHttpStatus(http.StatusConflict).
+		NewError("resource already existed")
 	ErrNotExists = ErrorRegistry().
-			AddErrorCode(4002).
-			AddHttpStatus(http.StatusNotFound).
-			NewError("resource does not exist")
+		AddErrorCode(4002).
+		AddHttpStatus(http.StatusNotFound).
+		NewError("resource does not exist")
 	ErrInvalidHttpMethod = ErrorRegistry().
-				AddErrorCode(4003).
-				AddHttpStatus(http.StatusMethodNotAllowed).
-				WrapError("invalid http method", fiber.ErrMethodNotAllowed)
+		AddErrorCode(4003).
+		AddHttpStatus(http.StatusMethodNotAllowed).
+		WrapError("invalid http method", fiber.ErrMethodNotAllowed)
 
 	ErrSystem = ErrorRegistry().
-			AddErrorCode(5000).
-			AddHttpStatus(http.StatusInternalServerError).
-			NewError("system issue")
+		AddErrorCode(5000).
+		AddHttpStatus(http.StatusInternalServerError).
+		NewError("system issue")
 	ErrDatabase = ErrorRegistry().
-			AddErrorCode(5001).
-			AddHttpStatus(http.StatusInternalServerError).
-			NewError("database issue")
+		AddErrorCode(5001).
+		AddHttpStatus(http.StatusInternalServerError).
+		NewError("database issue")
 )
 
 var (
