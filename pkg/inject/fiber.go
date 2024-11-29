@@ -48,6 +48,7 @@ func NewFiberRouter(conf *pkg.Config, db *gorm.DB, svc *Service) *fiber.App {
 	}
 
 	router.Get("/logger/level", fixFiberIssue3138(wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))...)
+	router.Post("/logger/level", fixFiberIssue3138(wfiber.ChangeLoggerLevel(conf.Hack, pkg.Logger()))...)
 
 	return router
 }
