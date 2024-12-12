@@ -58,7 +58,7 @@ func ServeFiber(port string, debug bool, router *fiber.App) {
 		if debug {
 			wfiber.ShowRoutes(router)
 		}
-		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
+		pkg.Logger().Slog().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		return nil
 	})
 	id := fmt.Sprintf("fiber(%p)", router)

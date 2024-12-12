@@ -118,24 +118,36 @@ func NewHandler(w io.Writer, conf *Config) slog.Handler {
 func NewLogger(lvl *slog.LevelVar, handlers ...slog.Handler) *Logger {
 	return &Logger{
 		lvl:    lvl,
-		Logger: slog.New(slogmulti.Fanout(handlers...)),
+		logger: slog.New(slogmulti.Fanout(handlers...)),
 	}
 }
 
 type Logger struct {
-	mu  sync.Mutex
-	lvl *slog.LevelVar
-	*slog.Logger
+	mu     sync.RWMutex
+	lvl    *slog.LevelVar
+	logger *slog.Logger
+}
+
+func (l *Logger) Slog() *slog.Logger {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.logger
+}
+
+func (l *Logger) WithAttribute(with func(*slog.Logger) *slog.Logger) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.logger = with(l.logger)
 }
 
 func (l *Logger) CtxWithLogger(ctx context.Context, v *slog.Logger) context.Context {
-	return context.WithValue(ctx, l.Logger, v)
+	return context.WithValue(ctx, l.logger, v)
 }
 
 func (l *Logger) CtxGetLogger(ctx context.Context) (logger *slog.Logger) {
-	v, ok := ctx.Value(l.Logger).(*slog.Logger)
+	v, ok := ctx.Value(l.logger).(*slog.Logger)
 	if !ok {
-		return l.Logger
+		return l.logger
 	}
 	return v
 }
@@ -159,7 +171,7 @@ func (l *Logger) SetStdDefaultLevel() {
 func (l *Logger) SetStdDefaultLogger() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	slog.SetDefault(l.Logger)
+	slog.SetDefault(l.logger)
 }
 
 // PointToNew
@@ -177,5 +189,5 @@ func (l *Logger) PointToNew(new *Logger) {
 	defer l.mu.Unlock()
 
 	l.lvl = new.lvl // 維持 slog.Handler 對 LevelVar 的引用
-	*l.Logger = *(new.Logger)
+	*l.logger = *(new.logger)
 }

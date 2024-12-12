@@ -144,7 +144,7 @@ func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handl
 	}
 	slogfiber.RequestIDKey = "req_id"
 
-	handler1 := slogfiber.NewWithConfig(wlogger.Logger, config)
+	handler1 := slogfiber.NewWithConfig(wlogger.Slog(), config)
 
 	handler2 := func(c *fiber.Ctx) error {
 		ctx := c.UserContext()
@@ -154,7 +154,7 @@ func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handl
 			slog.String("method", c.Method()),
 			slog.String("route", c.Route().Path),
 		}
-		logger := wlogger.With(
+		logger := wlogger.Slog().With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),
 			slog.String(slogfiber.RequestIDKey, reqId),
 		)

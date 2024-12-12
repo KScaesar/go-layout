@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	defaultShutdown.Store(utility.NewShutdown(context.Background(), -1, Logger().Logger))
+	defaultShutdown.Store(utility.NewShutdown(context.Background(), -1, Logger().Slog()))
 	go Shutdown().Serve()
 }
 
@@ -25,20 +25,20 @@ func Init(conf *Config) io.Closer {
 		}
 	}()
 
-	logWriter, err := initLogger(conf.Filename.Logger, &conf.Logger)
+	logWriter, err := initLogger(conf.Filepath.Logger, &conf.Logger)
 	if err != nil {
-		Logger().Error("init logger fail", slog.Any("err", err))
+		Logger().Slog().Error("init logger fail", slog.Any("err", err))
 		return nil
 	}
 
-	Logger().Debug("show config", slog.Any("conf", conf))
+	Logger().Slog().Debug("show config", slog.Any("conf", conf))
 	if conf.ShowErrCode {
 		ErrorRegistry().ShowErrors()
 	}
 
 	err = utility.InitO11YTracer(&conf.O11Y, Shutdown(), Version().ServiceName)
 	if err != nil {
-		Logger().Error("init o11y tracer fail", slog.Any("err", err))
+		Logger().Slog().Error("init o11y tracer fail", slog.Any("err", err))
 		return nil
 	}
 
@@ -48,13 +48,15 @@ func Init(conf *Config) io.Closer {
 //
 
 func initLogger(filename string, conf *wlog.Config) (w io.WriteCloser, err error) {
-	logger, w, err := wlog.LoggerFactory(filename, conf)
+	wlogger, w, err := wlog.LoggerFactory(filename, conf)
 	if err != nil {
 		return nil, err
 	}
 
-	logger.Logger = logger.With(slog.String("svc", Version().ServiceName))
-	Logger().PointToNew(logger)
+	wlogger.WithAttribute(func(logger *slog.Logger) *slog.Logger {
+		return logger.With(slog.String("svc", Version().ServiceName))
+	})
+	Logger().PointToNew(wlogger)
 	Logger().SetStdDefaultLevel()
 	Logger().SetStdDefaultLogger()
 	return

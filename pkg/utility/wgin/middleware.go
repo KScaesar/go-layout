@@ -129,7 +129,7 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerF
 	}
 	sloggin.RequestIDKey = "req_id"
 
-	h1 := sloggin.NewWithConfig(Logger.Logger, config)
+	h1 := sloggin.NewWithConfig(Logger.Slog(), config)
 
 	h2 := func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -139,7 +139,7 @@ func O11YLogger(debug bool, enableTrace bool, Logger *wlog.Logger) (gin.HandlerF
 			slog.String("method", c.Request.Method),
 			slog.String("route", c.FullPath()),
 		}
-		logger := Logger.With(
+		logger := Logger.Slog().With(
 			slog.Any("request", slog.GroupValue(requestAttributes...)),
 			slog.String(sloggin.RequestIDKey, reqId),
 		)

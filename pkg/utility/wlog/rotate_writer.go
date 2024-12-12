@@ -42,13 +42,13 @@ func NewRotateWriter(filename string, bufSize int) (io.WriteCloser, error) {
 
 	conf := &Config{}
 	conf.SetJsonFormat(true)
-	logger := NewStderrLogger(conf)
+	wlogger := NewStderrLogger(conf)
 
 	w := &RotateWriter{
 		filename: filename,
 		bWriter:  bufio.NewWriterSize(file, bufSize),
 		raw:      file,
-		Logger:   logger.Logger,
+		Logger:   wlogger.Slog(),
 	}
 
 	go w.autoFlush()

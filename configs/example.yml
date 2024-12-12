@@ -10,7 +10,7 @@ Http:
   Port: 8800
   Debug: false
 
-Filename:
+Filepath:
   Logger: "./ops.log" # output to stderr if empty
   Event: "./event.log"  # output to stdout if empty
 

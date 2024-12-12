@@ -11,14 +11,7 @@ import (
 
 func ChangeLoggerLevel(hack utility.Hack, wlogger *wlog.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		v1 := hack.Value()
-		v2 := c.Query("hack")
-		wlogger.Debug("print hack", slog.Group("hack",
-			slog.String("v1", v1),
-			slog.String("v2", v2),
-		))
-
-		if !hack.Challenge(v2) {
+		if !hack.Challenge(c.Query("hack")) {
 			return nil
 		}
 

@@ -18,7 +18,7 @@ func MustLoadConfig() *Config {
 	filePath := flag.String("conf", defaultPath, "Path to the configuration file")
 	flag.Parse()
 
-	logger := Logger().Logger
+	logger := Logger().Slog()
 
 	conf, err := utility.LoadLocalConfigFromMultiSource[Config](yaml.Unmarshal, *filePath, logger)
 	if err != nil {
@@ -33,7 +33,7 @@ type Config struct {
 	Hack        utility.Hack `yaml:"Hack"`
 	ShowErrCode bool         `yaml:"ShowErrCode"`
 
-	Filename Filename `yaml:"Filename"`
+	Filepath Filepath `yaml:"Filepath"`
 	Http     Http     `yaml:"Http"`
 	MySql    MySql    `yaml:"MySql"`
 	Redis    Redis    `yaml:"Redis"`
@@ -54,7 +54,7 @@ func (c *Config) AppId() string {
 	return c.AppId_
 }
 
-type Filename struct {
+type Filepath struct {
 	Logger string `yaml:"Logger"` // output to stderr if empty
 	Event  string `yaml:"Event"`  // output to stdout if empty
 }

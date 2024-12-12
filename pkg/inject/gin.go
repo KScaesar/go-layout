@@ -57,7 +57,7 @@ func ServeGin(port string, handler http.Handler) {
 	})
 
 	go func() {
-		pkg.Logger().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
+		pkg.Logger().Slog().Info("api start", slog.String("url", "http://0.0.0.0:"+port))
 		err := server.ListenAndServe()
 		pkg.Shutdown().Notify(err)
 	}()

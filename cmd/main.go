@@ -11,9 +11,11 @@ import (
 )
 
 func init() {
-	logger := wlog.NewStderrLoggerWhenNormal(true)
-	logger.Logger = logger.With(slog.Any("version", pkg.Version()))
-	pkg.Logger().PointToNew(logger)
+	wlogger := wlog.NewStderrLoggerWhenNormal(true)
+	wlogger.WithAttribute(func(logger *slog.Logger) *slog.Logger {
+		return logger.With(slog.Any("version", pkg.Version()))
+	})
+	pkg.Logger().PointToNew(wlogger)
 }
 
 func main() {
@@ -47,7 +49,7 @@ func main() {
 	// mux := inject.NewGinRouter(conf, infra.MySql, svc)
 
 	// server start
-	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, pkg.Logger().Logger)
+	utility.ServeO11YMetric(conf.O11Y.Port, shutdown, pkg.Logger().Slog())
 	inject.ServeFiber(conf.Http.Port, conf.Http.Debug, mux)
 	// inject.ServeGin(conf.Http.Port, mux)
 }
