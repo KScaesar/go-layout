@@ -10,10 +10,10 @@ var (
 	release_date string
 )
 
-var defaultVersion = newVersion()
+var _version = newVersion()
 
 func Version() version {
-	return defaultVersion
+	return _version
 }
 
 func newVersion() version {

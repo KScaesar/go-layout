@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	defaultShutdown.Store(utility.NewShutdown(context.Background(), -1, Logger().Slog()))
+	_Shutdown.Store(utility.NewShutdown(context.Background(), -1, Logger().Slog()))
 	go Shutdown().Serve()
 }
 
@@ -62,24 +62,24 @@ func initLogger(filename string, conf *wlog.Config) (w io.WriteCloser, err error
 	return
 }
 
-var defaultLogger = wlog.NewStderrLoggerWhenNormal(false)
+var _Logger = wlog.NewStderrLoggerWhenNormal(false)
 
 func Logger() *wlog.Logger {
-	return defaultLogger
+	return _Logger
 }
 
 //
 
-var defaultShutdown atomic.Pointer[utility.Shutdown]
+var _Shutdown atomic.Pointer[utility.Shutdown]
 
 func Shutdown() *utility.Shutdown {
-	return defaultShutdown.Load()
+	return _Shutdown.Load()
 }
 
 //
 
-var defaultErrorRegistry = utility.NewErrorRegistry()
+var _ErrorRegistry = utility.NewErrorRegistry()
 
 func ErrorRegistry() *utility.ErrorRegistry {
-	return defaultErrorRegistry
+	return _ErrorRegistry
 }
