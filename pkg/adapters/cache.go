@@ -53,3 +53,21 @@ func SetLocalCacheByType[T any](store *bigcache.BigCache, key string, val *T) (E
 	}
 	return
 }
+
+// CachePolicyByQty
+// This is used in scenarios involving count accumulation to decide when to use local cache.
+//
+// When current value is too far from target value, local cache is used to reduce database load.
+// If current value is close to target value, local cache is bypassed.
+//
+// Return bool:
+//   true  - Use local cache (current value is far from the target).
+//   false - Bypass local cache (current value is close to the target).
+func CachePolicyByQty(target int) func(current int) bool {
+	const percent = 10
+	tolerance := (target * percent) / 100
+
+	return func(current int) bool {
+		return !(target-tolerance <= current && current < target)
+	}
+}

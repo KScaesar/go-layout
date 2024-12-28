@@ -56,14 +56,14 @@ func ConvertErrorFromRedis(err error) error {
 //
 
 func GetRedisStringByType[T any](
-	// dependency
-	client *redis.Client,
-	unmarshal utility.Unmarshal,
-	logger *slog.Logger,
+// dependency
+	  client *redis.Client,
+	  unmarshal utility.Unmarshal,
+	  logger *slog.Logger,
 
-	// parameter
-	ctx context.Context,
-	key string,
+// parameter
+	  ctx context.Context,
+	  key string,
 ) (resp T, Err error) {
 
 	bData, err := client.Get(ctx, key).Bytes()
