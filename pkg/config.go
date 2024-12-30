@@ -90,6 +90,14 @@ type Redis struct {
 	Port     string `yaml:"Port"`
 }
 
+func (conf *Redis) SetHost(host string) {
+	conf.Host = host
+}
+
+func (conf *Redis) SetPort(port string) {
+	conf.Port = port
+}
+
 func (conf Redis) Address() string {
 	return fmt.Sprintf("%v:%v", conf.Host, conf.Port)
 }
