@@ -32,7 +32,7 @@ func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryAndReplicaNode(key
 	value, err, _ := proxy.Guard.Do(key, func() (any, error) {
 		return proxy.Read(key)
 	})
-	proxy.Guard.Expire(key, time.Second)
+	proxy.Guard.Expire(key, 100*time.Millisecond)
 	// proxy.Guard.Forget(key)
 	return value.(ViewModel), err
 }
