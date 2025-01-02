@@ -16,6 +16,9 @@ type ReadProxy[ViewModel any, Read func(key string) (ViewModel, error), Write fu
 	ReadPrimary  Read
 	WriteReplica Write
 	Guard        *Singleflight
+
+	// 用來防禦瞬間請求, 定義 1 秒以下的數值
+	GuardExpire time.Duration
 }
 
 // SafeReadPrimaryNode 併發時, 只會保護 Primary Node, 不會保護 Replica Node
@@ -32,8 +35,7 @@ func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryAndReplicaNode(key
 	value, err, _ := proxy.Guard.Do(key, func() (any, error) {
 		return proxy.Read(key)
 	})
-	proxy.Guard.Expire(key, 100*time.Millisecond)
-	// proxy.Guard.Forget(key)
+	proxy.Guard.Expire(key, proxy.GuardExpire)
 	return value.(ViewModel), err
 }
 
