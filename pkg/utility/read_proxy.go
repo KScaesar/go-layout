@@ -32,10 +32,12 @@ func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryNode(key string) (
 
 // SafeReadPrimaryAndReplicaNode 併發時, 會保護 Primary Node and Replica Node
 func (proxy ReadProxy[ViewModel, Read, Write]) SafeReadPrimaryAndReplicaNode(key string) (val ViewModel, err error) {
-	value, err, _ := proxy.Guard.Do(key, func() (any, error) {
+	value, err, shared := proxy.Guard.Do(key, func() (any, error) {
 		return proxy.Read(key)
 	})
-	proxy.Guard.Expire(key, proxy.GuardExpire)
+	if !shared {
+		proxy.Guard.Expire(key, proxy.GuardExpire)
+	}
 	return value.(ViewModel), err
 }
 

@@ -50,7 +50,11 @@ func (group *Singleflight) Forget(key string) {
 // Singleflight is designed to ensure that only one execution is in flight for a given key at a time.
 // It should not be used as a local cache.
 func (group *Singleflight) Expire(key string, t time.Duration) {
-	time.AfterFunc(t, func() {
+	if t == 0 {
 		group.Forget(key)
-	})
+	} else {
+		time.AfterFunc(t, func() {
+			group.Forget(key)
+		})
+	}
 }
