@@ -166,7 +166,7 @@ func (node *trie) addRoute(subject string, cursor int, param *paramHandler, path
 	return child.addRoute(subject, idx+1, param, path)
 }
 
-func (node *trie) handleMessage(subject string, cursor int, message *Message, dep any) error {
+func (node *trie) handleMessage(cursor int, message *Message, dep any) error {
 	current := node
 
 	var defaultHandler, notFoundHandler HandleFunc
@@ -175,13 +175,12 @@ func (node *trie) handleMessage(subject string, cursor int, message *Message, de
 	wildcardStart := notWildcard
 	var wildcardParent *trie
 
-	for cursor <= len(subject) {
+	for cursor <= len(message.Subject) {
 		if current.transform != nil {
 			err := current.transform(message, dep)
 			if err != nil {
 				return err
 			}
-			subject = message.Subject
 		}
 
 		if current.defaultHandler != nil {
@@ -197,11 +196,11 @@ func (node *trie) handleMessage(subject string, cursor int, message *Message, de
 			wildcardParent = current
 		}
 
-		if cursor == len(subject) {
+		if cursor == len(message.Subject) {
 			break
 		}
 
-		child, exist := current.staticChild[subject[cursor]]
+		child, exist := current.staticChild[message.Subject[cursor]]
 		if !exist {
 			break
 		}
@@ -210,7 +209,7 @@ func (node *trie) handleMessage(subject string, cursor int, message *Message, de
 	}
 
 	// for static route
-	if current.handler != nil && cursor == len(subject) {
+	if current.handler != nil && cursor == len(message.Subject) {
 		return current.handler(message, dep)
 	}
 	if wildcardParent == nil {
@@ -225,16 +224,16 @@ func (node *trie) handleMessage(subject string, cursor int, message *Message, de
 
 	// for wildcard route
 	wildcardFinish := wildcardStart
-	for wildcardFinish < len(subject) && subject[wildcardFinish] != current.delimiter[0] {
+	for wildcardFinish < len(message.Subject) && message.Subject[wildcardFinish] != current.delimiter[0] {
 		wildcardFinish++
 	}
 
-	bytes := unsafe.Slice(unsafe.StringData(subject), len(subject))
+	bytes := unsafe.Slice(unsafe.StringData(message.Subject), len(message.Subject))
 	value := bytes[wildcardStart:wildcardFinish]
 	str := unsafe.String(unsafe.SliceData(value), wildcardFinish-wildcardStart)
 	message.RouteParam.Set(wildcardParent.wildcardChildWord, str)
 
-	err := wildcardParent.wildcardChild.handleMessage(subject, wildcardFinish, message, dep)
+	err := wildcardParent.wildcardChild.handleMessage(wildcardFinish, message, dep)
 	if err != nil && errors.Is(err, ErrNotFoundSubject) {
 		if defaultHandler != nil {
 			return defaultHandler(message, dep)

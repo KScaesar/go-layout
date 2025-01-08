@@ -34,12 +34,7 @@ func (mux *Mux) HandleMessage(message *Message, dependency any) (err error) {
 			err = mux.errorHandler(message, dependency, err)
 		}
 	}()
-
-	if mux.node.transform != nil {
-		return mux.node.handleMessage("", 0, message, dependency)
-	}
-
-	return mux.node.handleMessage(message.Subject, 0, message, dependency)
+	return mux.node.handleMessage(0, message, dependency)
 }
 
 // Middleware
