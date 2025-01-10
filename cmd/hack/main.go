@@ -7,7 +7,7 @@ import (
 	"github.com/KScaesar/go-layout/pkg/utility"
 )
 
-var key string
+var key = ""
 
 func main() {
 	if len(key) == 0 && len(os.Args) > 1 {
