@@ -31,7 +31,10 @@ func Init(conf *Config) io.Closer {
 		return nil
 	}
 
-	Logger().Slog().Debug("show config", slog.Any("conf", conf))
+	Logger().Slog().Debug("show config",
+		slog.Any("conf", wlog.JsonValue(true, conf)),
+		slog.String("node_id", conf.NodeId()),
+	)
 	if conf.ShowErrCode {
 		ErrorRegistry().ShowErrors()
 	}

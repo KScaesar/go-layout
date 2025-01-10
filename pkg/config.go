@@ -1,6 +1,8 @@
 package pkg
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -29,7 +31,7 @@ func MustLoadConfig() *Config {
 }
 
 type Config struct {
-	AppId_      string       `yaml:"AppId"`
+	NodeId_     string       `yaml:"NodeId"`
 	Hack        utility.Hack `yaml:"Hack"`
 	ShowErrCode bool         `yaml:"ShowErrCode"`
 
@@ -42,16 +44,23 @@ type Config struct {
 	Logger wlog.Config        `yaml:"Logger"`
 }
 
-func (c *Config) AppId() string {
-	if c.AppId_ == "" {
+func (c *Config) NodeId() string {
+	if c.NodeId_ == "" {
 		hostname, err := os.Hostname()
 		if err != nil {
 			panic(err)
 		}
-		DefaultAppId := hostname
-		c.AppId_ = DefaultAppId
+		hash := sha256.New()
+		hash.Write([]byte(hostname))
+		nodeId := base64.StdEncoding.EncodeToString(hash.Sum(nil))
+		if len(nodeId) > 16 {
+			nodeId = nodeId[:16]
+		}
+
+		DefaultNodeId := nodeId
+		c.NodeId_ = DefaultNodeId
 	}
-	return c.AppId_
+	return c.NodeId_
 }
 
 type Filepath struct {
