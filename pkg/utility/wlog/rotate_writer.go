@@ -16,7 +16,7 @@ import (
 func openFileIfNotExist(FilePath string) (*os.File, error) {
 	FilePath = filepath.Clean(FilePath)
 	dir := filepath.Dir(FilePath)
-	err := os.MkdirAll(dir, 0755)
+	err := os.MkdirAll(dir, 0775)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
@@ -42,13 +42,16 @@ func NewRotateWriter(filename string, bufSize int) (io.WriteCloser, error) {
 
 	conf := &Config{}
 	conf.SetJsonFormat(true)
-	wlogger := NewStderrLogger(conf)
+	logger := NewStderrLogger(conf)
+	logger.WithAttribute(func(l *slog.Logger) *slog.Logger {
+		return l.With(slog.String("file", filename))
+	})
 
 	w := &RotateWriter{
 		filename: filename,
 		bWriter:  bufio.NewWriterSize(file, bufSize),
 		raw:      file,
-		Logger:   wlogger.Slog(),
+		Logger:   logger.Slog(),
 	}
 
 	go w.autoFlush()
