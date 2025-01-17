@@ -87,10 +87,7 @@ func NewHandler(w io.Writer, conf *Config) slog.Handler {
 
 	replace := func(groups []string, a slog.Attr) slog.Attr {
 		for _, format := range conf.Formats {
-			attr, ok := format(groups, a)
-			if ok {
-				return attr
-			}
+			a = format(groups, a)
 		}
 		return a
 	}
