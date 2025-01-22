@@ -112,22 +112,22 @@ func fixFiberError(err *fiber.Error) (error, bool) {
 
 //
 
-func ParseQueryString(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
+func ParseQueryString(c *fiber.Ctx, req any, logger *slog.Logger) error {
 	err := c.QueryParser(req)
 	if err != nil {
 		logger.Error(err.Error(), slog.Any("cause", ParseQueryString))
-		return false, fmt.Errorf("Parse QueryString: %w", pkg.ErrInvalidParam)
+		return fmt.Errorf("Parse QueryString: %w", pkg.ErrInvalidParam)
 	}
-	return true, nil
+	return nil
 }
 
-func ParseJsonBody(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
+func ParseJsonBody(c *fiber.Ctx, req any, logger *slog.Logger) error {
 	err := json.Unmarshal(c.BodyRaw(), &req)
 	if err != nil {
 		logger.Error(err.Error(), slog.Any("cause", ParseJsonBody))
-		return false, fmt.Errorf("json.Unmarshal: %w", pkg.ErrInvalidParam)
+		return fmt.Errorf("json.Unmarshal: %w", pkg.ErrInvalidParam)
 	}
-	return true, nil
+	return nil
 }
 
 //
