@@ -112,21 +112,20 @@ func fixFiberError(err *fiber.Error) (error, bool) {
 
 //
 
-func ParseQueryByFiber(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
+func ParseQueryString(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
 	err := c.QueryParser(req)
 	if err != nil {
-		logger.Error(err.Error(), slog.Any("cause", c.QueryParser))
-		return false, HandleErrorByFiber(c, pkg.ErrInvalidParam)
+		logger.Error(err.Error(), slog.Any("cause", ParseQueryString))
+		return false, fmt.Errorf("Parse QueryString: %w", pkg.ErrInvalidParam)
 	}
 	return true, nil
 }
 
-func ParseDataflowByFiber(ingress *dataflow.Message, req any, logger *slog.Logger) (bool, error) {
-	err := json.Unmarshal(ingress.Bytes, req)
+func ParseJsonBody(c *fiber.Ctx, req any, logger *slog.Logger) (bool, error) {
+	err := json.Unmarshal(c.BodyRaw(), &req)
 	if err != nil {
-		logger.Error(err.Error(), slog.Any("cause", json.Unmarshal))
-		c := ingress.RawInfra.(*fiber.Ctx)
-		return false, HandleErrorByFiber(c, pkg.ErrInvalidParam)
+		logger.Error(err.Error(), slog.Any("cause", ParseJsonBody))
+		return false, fmt.Errorf("json.Unmarshal: %w", pkg.ErrInvalidParam)
 	}
 	return true, nil
 }
@@ -238,11 +237,7 @@ func dataflowO11YLogger() dataflow.Middleware {
 			err := next(ingress, dep)
 
 			errCode := strconv.Itoa(FiberMetadata.GetErrorCode(c))
-			if errCode != "0" {
-				logger.Error("dataflow failed", slog.String("err_code", errCode))
-			} else {
-				logger.Info("dataflow succeeded")
-			}
+			logger.Info("dataflow finish", slog.String("err_code", errCode))
 
 			return err
 		}

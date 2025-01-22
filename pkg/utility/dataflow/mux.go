@@ -30,7 +30,7 @@ type Mux struct {
 // HandleMessage is also a HandleFunc, but with added routing capabilities.
 func (mux *Mux) HandleMessage(message *Message, dependency any) (err error) {
 	defer func() {
-		if mux.errorHandler != nil {
+		if mux.errorHandler != nil && err != nil {
 			err = mux.errorHandler(message, dependency, err)
 		}
 	}()
