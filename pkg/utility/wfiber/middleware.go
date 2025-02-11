@@ -53,11 +53,12 @@ func NewO11YMetric(svcName string) *O11YMetric {
 			Name:      "requests_total",
 			Help:      "Total number of HTTP requests",
 		}, []string{"method", "route"}),
-		ErrorsTotal: promauto.NewCounterVec(prometheus.CounterOpts{
+
+		RequestsResult: promauto.NewCounterVec(prometheus.CounterOpts{
 			Namespace: svcName,
 			Subsystem: "http",
-			Name:      "requests_total_errors",
-			Help:      "Total number of HTTP errors",
+			Name:      "requests_result",
+			Help:      "Result of HTTP requests",
 		}, []string{"code", "method", "route"}),
 
 		RequestsInflight: promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -70,15 +71,9 @@ func NewO11YMetric(svcName string) *O11YMetric {
 }
 
 type O11YMetric struct {
-	// metric1
-	ResponseSecond *prometheus.HistogramVec
-
-	// metric2-a
-	RequestsTotal *prometheus.CounterVec
-	// metric2-b
-	ErrorsTotal *prometheus.CounterVec
-
-	// metric3
+	ResponseSecond   *prometheus.HistogramVec
+	RequestsTotal    *prometheus.CounterVec
+	RequestsResult   *prometheus.CounterVec
 	RequestsInflight *prometheus.GaugeVec
 }
 
@@ -89,27 +84,19 @@ func (m *O11YMetric) Middleware(c *fiber.Ctx) error {
 
 	route := c.Route().Path
 
-	// metric1
 	start := time.Now()
 
-	// metric2-a
 	m.RequestsTotal.WithLabelValues(method, route).Inc()
 
-	// metric3
 	m.RequestsInflight.WithLabelValues(method, route).Add(1)
 
 	err := c.Next()
 
-	// metric3
 	m.RequestsInflight.WithLabelValues(method, route).Add(-1)
 
-	// metric2-b
 	code := strconv.Itoa(c.Response().StatusCode())
-	if code[0] == '4' || code[0] == '5' {
-		m.ErrorsTotal.WithLabelValues(code, method, route).Inc()
-	}
+	m.RequestsResult.WithLabelValues(code, method, route).Inc()
 
-	// metric1
 	duration := time.Since(start).Seconds()
 	span := trace.SpanFromContext(c.UserContext())
 	traceId := span.SpanContext().TraceID()
@@ -123,6 +110,11 @@ func (m *O11YMetric) Middleware(c *fiber.Ctx) error {
 	return err
 }
 
+// O11YLogger
+//
+// handler1: logs HTTP messages
+//
+// handler2: adds a logger with req_id to the standard context, allowing subsequent functions to use logger from ctx
 func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handler, fiber.Handler) {
 	var config slogfiber.Config
 	config.WithRequestID = true
@@ -171,6 +163,7 @@ func O11YLogger(debug bool, enableTrace bool, wlogger *wlog.Logger) (fiber.Handl
 		}
 
 		c.SetUserContext(wlogger.CtxWithLogger(ctx, logger))
+
 		return c.Next()
 	}
 
