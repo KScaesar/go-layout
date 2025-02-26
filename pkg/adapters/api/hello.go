@@ -32,14 +32,20 @@ func HelloGin(hack utility.Hack) func(c *gin.Context) {
 }
 
 func HelloFiber() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		logger := pkg.Logger().CtxGetLogger(c.UserContext())
+	return func(c *fiber.Ctx) (err error) {
+		ctx := c.UserContext()
+		logger := pkg.Logger().CtxGetLogger(ctx).With(slog.Any("fn", HelloFiber))
 
-		// err := nil
-		err := pkg.ErrInvalidUsername
+		defer func() {
+			if err != nil {
+				err = adapters.HandleErrorByFiber(c, err)
+			}
+		}()
+
+		// err = nil
+		err = pkg.ErrInvalidUsername
 		if err != nil {
-			logger.Error("hello fail", slog.Any("err", err))
-			err = adapters.HandleErrorByFiber(c, err)
+			logger.Error(err.Error(), slog.Any("cause", "xxx_service"))
 			return err
 		}
 

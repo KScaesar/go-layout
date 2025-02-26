@@ -65,25 +65,28 @@ type ErrorResponse struct {
 //
 
 func HandleErrorByFiber(c *fiber.Ctx, err error) error {
-	myErr, ok := utility.UnwrapCustomError(err)
-	if !ok {
-		Err, isFixed := fixUnknownError(err)
-		if isFixed {
-			myErr, ok = utility.UnwrapCustomError(Err)
-			err = Err
-		}
-	}
-
+	errCode, httpStatus, Err, ok := unwrapError(err)
 	if !ok {
 		logger := pkg.Logger().CtxGetLogger(c.UserContext())
-		logger.Warn("capture unknown error", slog.Any("err", err))
+		logger.Warn("capture unknown error", slog.Any("err", Err))
 	}
 
-	FiberMetadata.SetErrorCode(c, myErr.ErrorCode())
-
-	errorResponse := NewErrorResponse(myErr.ErrorCode(), err.Error())
+	FiberMetadata.SetErrorCode(c, errCode)
+	errorResponse := NewErrorResponse(errCode, Err.Error())
 	body := fiber.Map{"error": errorResponse}
-	return c.Status(myErr.HttpStatus()).JSON(body)
+	return c.Status(httpStatus).JSON(body)
+}
+
+func unwrapError(err error) (errCode int, httpStatus int, Err error, ok bool) {
+	myErr, ok := utility.UnwrapCustomError(err)
+	if !ok {
+		errByFixing, isFixed := fixUnknownError(err)
+		if isFixed {
+			myErr, ok = utility.UnwrapCustomError(errByFixing)
+			err = errByFixing
+		}
+	}
+	return myErr.ErrorCode(), myErr.HttpStatus(), err, ok
 }
 
 func fixUnknownError(err error) (Err error, isFixed bool) {
@@ -125,7 +128,7 @@ func ParseJsonBody(c *fiber.Ctx, req any, logger *slog.Logger) error {
 	err := json.Unmarshal(c.BodyRaw(), &req)
 	if err != nil {
 		logger.Error(err.Error(), slog.Any("cause", ParseJsonBody))
-		return fmt.Errorf("json.Unmarshal: %w", pkg.ErrInvalidParam)
+		return fmt.Errorf("%v: %w", err.Error(), pkg.ErrInvalidParam)
 	}
 	return nil
 }
