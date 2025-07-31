@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -33,8 +34,7 @@ func HelloGin(hack utility.Hack) func(c *gin.Context) {
 
 func HelloFiber() fiber.Handler {
 	return func(c *fiber.Ctx) (err error) {
-		ctx := c.UserContext()
-		logger := pkg.Logger().CtxGetLogger(ctx).With(slog.Any("fn", HelloFiber))
+		c.UserContext()
 
 		defer func() {
 			if err != nil {
@@ -45,11 +45,9 @@ func HelloFiber() fiber.Handler {
 		// err = nil
 		err = pkg.ErrInvalidUsername
 		if err != nil {
-			logger.Error(err.Error(), slog.Any("cause", "xxx_service"))
-			return err
+			return fmt.Errorf("xxx_service: %w", err)
 		}
 
-		logger.Info("hello fiber")
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"acs": "hello"})
 	}
 }

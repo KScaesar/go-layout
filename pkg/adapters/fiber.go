@@ -65,9 +65,11 @@ type ErrorResponse struct {
 //
 
 func HandleErrorByFiber(c *fiber.Ctx, err error) error {
+	logger := pkg.Logger().CtxGetLogger(c.UserContext())
+	logger.Error(err.Error())
+
 	errCode, httpStatus, Err, ok := unwrapError(err)
 	if !ok {
-		logger := pkg.Logger().CtxGetLogger(c.UserContext())
 		logger.Warn("capture unknown error", slog.Any("err", Err))
 	}
 

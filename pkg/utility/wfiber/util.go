@@ -29,3 +29,19 @@ func ShowRoutes(router *fiber.App) {
 
 	fmt.Println(strings.Join(out, "\n"))
 }
+
+// func ParseQueryString(c *fiber.Ctx, req any) error {
+// 	err := c.QueryParser(req)
+// 	if err != nil {
+// 		return fmt.Errorf("ParseQueryString: %w", pkg.ErrInvalidParam)
+// 	}
+// 	return nil
+// }
+//
+// func ParseJsonBody(c *fiber.Ctx, req any) error {
+// 	err := json.Unmarshal(c.BodyRaw(), req)
+// 	if err != nil {
+// 		return fmt.Errorf("ParseJsonBody: %v: %w", err.Error(), pkg.ErrInvalidParam)
+// 	}
+// 	return nil
+// }
